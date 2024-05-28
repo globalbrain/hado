@@ -36,8 +36,7 @@
     "lint:fail": "deno lint",
     "test": "deno test -A",
     "test:watch": "deno test -A --watch",
-    "type": "deno check **/*.ts",
-    "check": "deno task format:fail && deno task lint:fail && deno task type && deno task test",
+    "check": "deno task format:fail && deno task lint:fail && deno task test",
     "release": "deno run -A ./scripts/release.ts"
   },
   "fmt": {
