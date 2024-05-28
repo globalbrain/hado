@@ -34,37 +34,11 @@ import {
   type SelectOptions,
 } from '@cliffy/prompt'
 import { $ } from '@david/dax'
-import {
-  black,
-  blue,
-  bold,
-  cyan,
-  dim,
-  gray,
-  green,
-  magenta,
-  red,
-  white,
-  yellow,
-} from '@std/fmt/colors'
+import { black, blue, bold, cyan, dim, gray, green, magenta, red, white, yellow } from '@std/fmt/colors'
 import { escape } from '@std/regexp'
-import {
-  canParse,
-  format,
-  increment,
-  parse,
-  type ReleaseType,
-} from '@std/semver'
+import { canParse, format, increment, parse, type ReleaseType } from '@std/semver'
 
-const SEMVER_INCREMENTS: ReleaseType[] = [
-  'patch',
-  'minor',
-  'major',
-  'prepatch',
-  'preminor',
-  'premajor',
-  'prerelease',
-]
+const SEMVER_INCREMENTS: ReleaseType[] = ['patch', 'minor', 'major', 'prepatch', 'preminor', 'premajor', 'prerelease']
 
 function isReleaseType(value: string): value is ReleaseType {
   return SEMVER_INCREMENTS.includes(value as ReleaseType)
@@ -77,21 +51,11 @@ const oldVersion = parse(denoJson.version)
 
 // #region Prompt
 
-const defaultTheme = {
-  prefix: green('? '),
-  listPointer: cyan('❯'),
-  pointer: cyan('›'),
-}
+const defaultTheme = { prefix: green('? '), listPointer: cyan('❯'), pointer: cyan('›') }
 
 class Confirm extends _Confirm {
   public getDefaultSettings(options: ConfirmOptions) {
-    return {
-      ...super.getDefaultSettings(options),
-      active: 'yes',
-      inactive: 'no',
-      default: true,
-      ...defaultTheme,
-    }
+    return { ...super.getDefaultSettings(options), active: 'yes', inactive: 'no', default: true, ...defaultTheme }
   }
 
   protected addChar(char: string): void {
@@ -107,10 +71,7 @@ class Confirm extends _Confirm {
 
 class Select extends _Select<string> {
   public getDefaultSettings(options: SelectOptions<string>) {
-    return {
-      ...super.getDefaultSettings(options),
-      ...defaultTheme,
-    }
+    return { ...super.getDefaultSettings(options), ...defaultTheme }
   }
 
   protected highlight(name: string | number): string {
@@ -152,10 +113,7 @@ class Select extends _Select<string> {
 
 class Input extends _Input {
   public getDefaultSettings(options: InputOptions) {
-    return {
-      ...super.getDefaultSettings(options),
-      ...defaultTheme,
-    }
+    return { ...super.getDefaultSettings(options), ...defaultTheme }
   }
 }
 
@@ -163,17 +121,7 @@ class Input extends _Input {
 
 // #region Ora
 
-const colors = {
-  black,
-  red,
-  green,
-  yellow,
-  blue,
-  magenta,
-  cyan,
-  white,
-  gray,
-}
+const colors = { black, red, green, yellow, blue, magenta, cyan, white, gray }
 
 type Color = keyof typeof colors
 
@@ -181,19 +129,12 @@ const env = Deno.env.toObject()
 
 const isEnabled = Deno.stdout.isTerminal() &&
   !(env.CI !== '0' && env.CI !== 'false' &&
-    ('CI' in env || 'CONTINUOUS_INTEGRATION' in env ||
-      Object.keys(env).some((key) => key.startsWith('CI_'))))
+    ('CI' in env || 'CONTINUOUS_INTEGRATION' in env || Object.keys(env).some((key) => key.startsWith('CI_'))))
 
-type Spinner = {
-  interval?: number
-  frames: string[]
-}
+type Spinner = { interval?: number; frames: string[] }
 
 const spinners: Record<'dots', Spinner> = {
-  dots: {
-    interval: 80,
-    frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
-  },
+  dots: { interval: 80, frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'] },
 }
 
 const okMark = '\x1b[32m✓\x1b[0m'
@@ -206,7 +147,7 @@ type OraOptions = {
   text?: string
 
   /**
-   * An object like:
+   * The spinner to use. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
    *
    * @example
    * ```ts
@@ -215,8 +156,6 @@ type OraOptions = {
    *   frames: ['-', '+', '-']
    * }
    * ```
-   *
-   * On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
    */
   spinner?: Spinner
 
@@ -238,20 +177,13 @@ type OraOptions = {
 /**
  * Run a function with a spinner.
  *
- * Usage:
- *
  * @example
  * ```ts
  * await step('Loading...', async () => {})
  * ```
  */
-async function step(
-  options: OraOptions | string = {},
-  fn: () => Promise<void>,
-): Promise<void> {
-  if (typeof options === 'string') {
-    options = { text: options }
-  }
+async function step(options: OraOptions | string = {}, fn: () => Promise<void>): Promise<void> {
+  if (typeof options === 'string') options = { text: options }
 
   let { text, spinner = spinners.dots, color = 'cyan', indent = 0 } = options
 
@@ -262,22 +194,13 @@ async function step(
   }
 
   text = text ? bold(` ${text}`) : ''
-
-  if (Deno.build.os === 'windows') {
-    spinner = {
-      frames: ['-', '\\', '|', '/'],
-    }
-  }
+  if (Deno.build.os === 'windows') spinner = { frames: ['-', '\\', '|', '/'] }
 
   let currentFrame = 0
 
   const interval = setInterval(() => {
     Deno.stdout.write(
-      new TextEncoder().encode(
-        `\r${' '.repeat(indent)}${
-          colors[color](spinner.frames[currentFrame]!)
-        }${text}`,
-      ),
+      new TextEncoder().encode(`\r${' '.repeat(indent)}${colors[color](spinner.frames[currentFrame]!)}${text}`),
     )
     currentFrame = (currentFrame + 1) % spinner.frames.length
   }, spinner.interval ?? 100)
@@ -291,11 +214,8 @@ async function step(
     clearInterval(interval)
     Deno.stdout.write(new TextEncoder().encode('\r\x1b[K'))
 
-    if (success) {
-      console.log(`${' '.repeat(indent)}${okMark}${text}`)
-    } else {
-      console.log(`${' '.repeat(indent)}${failMark}${text}`)
-    }
+    if (success) console.log(`${' '.repeat(indent)}${okMark}${text}`)
+    else console.log(`${' '.repeat(indent)}${failMark}${text}`)
   }
 }
 
@@ -360,11 +280,7 @@ function newGithubReleaseUrl(options: NewGithubReleaseUrlOptions): string {
 
 // #region Opener
 
-const programAliases = {
-  windows: 'explorer',
-  darwin: 'open',
-  linux: 'sensible-browser',
-}
+const programAliases = { windows: 'explorer', darwin: 'open', linux: 'sensible-browser' }
 
 function isSupportedOS(os: string): os is keyof typeof programAliases {
   return os in programAliases
@@ -372,9 +288,7 @@ function isSupportedOS(os: string): os is keyof typeof programAliases {
 
 async function open(url: string): Promise<void> {
   if (!isSupportedOS(Deno.build.os)) {
-    console.error(
-      'Unsupported OS. Please open the following URL manually:\n' + url,
-    )
+    console.error('Unsupported OS. Please open the following URL manually:\n' + url)
     return
   }
   await $.raw`${programAliases[Deno.build.os]} ${$.escapeArg(url)}`
@@ -384,18 +298,11 @@ async function open(url: string): Promise<void> {
 
 // #region Main
 
-console.log(
-  `\nPublish a new version of ${bold(magenta(denoJson.name))} ${
-    dim(`(current: ${denoJson.version})`)
-  }\n`,
-)
+console.log(`\nPublish a new version of ${bold(magenta(denoJson.name))} ${dim(`(current: ${denoJson.version})`)}\n`)
 
 let version = await Select.prompt({
   message: 'Select version increment',
-  options: [...SEMVER_INCREMENTS, Select.separator(), {
-    name: 'Other (specify)',
-    value: 'other',
-  }],
+  options: [...SEMVER_INCREMENTS, Select.separator(), { name: 'Other (specify)', value: 'other' }],
 })
 
 if (version === 'other') {
@@ -409,15 +316,9 @@ if (version === 'other') {
   })
 }
 
-const newVersion = format(
-  isReleaseType(version) ? increment(oldVersion, version) : parse(version),
-)
+const newVersion = format(isReleaseType(version) ? increment(oldVersion, version) : parse(version))
 
-if (
-  !(await Confirm.prompt({
-    message: `Bump ${dim(`(${denoJson.version} → ${newVersion})`)}?`,
-  }))
-) Deno.exit()
+if (!(await Confirm.prompt({ message: `Bump ${dim(`(${denoJson.version} → ${newVersion})`)}?` }))) Deno.exit()
 
 await step('Updating version in deno.json...', async () => {
   denoJson.version = newVersion
@@ -432,11 +333,7 @@ await step('Generating changelog...', async () => {
   await $.raw`deno fmt CHANGELOG.md`.quiet()
 })
 
-if (
-  !(await Confirm.prompt({
-    message: 'Changelog generated. Does it look good?',
-  }))
-) Deno.exit()
+if (!(await Confirm.prompt({ message: 'Changelog generated. Does it look good?' }))) Deno.exit()
 
 await step('Committing changes...', async () => {
   await $.raw`git add deno.json CHANGELOG.md`.quiet()
@@ -451,9 +348,9 @@ await step('Pushing to GitHub...', async () => {
 
 await step('Creating a new release...', async () => {
   const changelog = await Deno.readTextFile('CHANGELOG.md')
-  let latestChanges = changelog.match(
-    new RegExp(`## ${escape(newVersion)}.*?\n([\\s\\S]*?)(?=\n## |$)`),
-  )?.[1]?.trim() ?? ''
+
+  let latestChanges =
+    changelog.match(new RegExp(`## ${escape(newVersion)}.*?\n([\\s\\S]*?)(?=\n## |$)`))?.[1]?.trim() ?? ''
 
   const repoUrl = 'https://github.com/globalbrain/hado'
   latestChanges += `\n\n**Full Changelog**: ${repoUrl}/commits/v${newVersion}`
