@@ -8,16 +8,17 @@
  *       https://github.com/vercel/next.js/blob/efcec4c1e303848a5293cef6961be8f73fd5160b/packages/next/src/shared/lib/router/utils/sorted-routes.ts
  */
 
-import { walkSync } from '@std/fs'
+import { walk } from '@std/fs'
 import { toFileUrl } from '@std/path'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 
+type Awaitable<T> = T | Promise<T>
 type Params = Record<string, string | string[]>
-type Handler = (req: Request, params: Params) => Promise<Response>
+type Handler = (req: Request, params: Params) => Awaitable<Response>
 
 // adapted from https://stackoverflow.com/a/46432113/11613622
-class _LRUCache<K, V> {
+class LRUCache<K, V> {
   readonly #max: number
   readonly #cache: Map<K, V>
 
@@ -48,7 +49,7 @@ class _LRUCache<K, V> {
     return this.#cache.keys().next().value
   }
 
-  async use(key: K, fn: () => Promise<V>, skip = false): Promise<V> {
+  async use(key: K, fn: () => Awaitable<V>, skip = false): Promise<V> {
     if (skip) return fn()
     let val = this.#get(key)
     if (val === undefined) {
@@ -66,18 +67,18 @@ class UrlNode {
   slugName: string | null = null
   restSlugName: string | null = null
   optionalRestSlugName: string | null = null
-  file: string | null = null
+  data: string | null = null
 
   // #region Insert
 
-  insert(urlPath: string, file: string): void {
-    this.#insert(urlPath.split('/').filter(Boolean), 0, [], false, file)
+  insert(urlPath: string, data: string): void {
+    this.#insert(urlPath.split('/').filter(Boolean), 0, [], false, data)
   }
 
-  #insert(urlPaths: string[], index: number, slugNames: string[], isCatchAll: boolean, file: string): void {
+  #insert(urlPaths: string[], index: number, slugNames: string[], isCatchAll: boolean, data: string): void {
     if (index === urlPaths.length) {
       this.placeholder = false
-      this.file = file
+      this.data = data
       return
     }
 
@@ -153,7 +154,7 @@ class UrlNode {
       this.children.set(nextSegment, new UrlNode())
     }
 
-    this.children.get(nextSegment)!.#insert(urlPaths, index + 1, slugNames, isCatchAll, file)
+    this.children.get(nextSegment)!.#insert(urlPaths, index + 1, slugNames, isCatchAll, data)
   }
 
   // #endregion
@@ -162,32 +163,32 @@ class UrlNode {
 
   lookup(
     urlPath: string,
-    fileHasMethod: (file: string) => Promise<boolean>,
-  ): Promise<{ file: string; params: Params } | null> {
-    return this.#lookup(urlPath.split('/').filter(Boolean), 0, {}, fileHasMethod)
+    validate: (data: string) => Awaitable<boolean>,
+  ): Promise<{ match: string; params: Params } | null> {
+    return this.#lookup(urlPath.split('/').filter(Boolean), 0, {}, validate)
   }
 
   async #lookup(
     urlPaths: string[],
     index: number,
     params: Params,
-    fileHasMethod: (file: string) => Promise<boolean>,
-  ): Promise<{ file: string; params: Params } | null> {
+    validate: (data: string) => Awaitable<boolean>,
+  ): Promise<{ match: string; params: Params } | null> {
     if (index === urlPaths.length) {
       if (!this.placeholder) {
         if (this.optionalRestSlugName !== null) {
           throw new Error('You cannot define a route with the same specificity as an optional catch-all route.')
         }
-        if (this.file && (await fileHasMethod(this.file))) {
-          return { file: this.file, params }
+        if (this.data && (await validate(this.data))) {
+          return { match: this.data, params }
         }
       }
 
       if (this.optionalRestSlugName !== null) {
         const result = this.children.get('[[...]]')!
-        if (result.file && (await fileHasMethod(result.file))) {
+        if (result.data && (await validate(result.data))) {
           params[this.optionalRestSlugName] = []
-          return { file: result.file, params }
+          return { match: result.data, params }
         }
       }
 
@@ -198,34 +199,29 @@ class UrlNode {
 
     if (this.children.has(nextSegment)) {
       const childNode = this.children.get(nextSegment)!
-      const result = await childNode.#lookup(urlPaths, index + 1, params, fileHasMethod)
+      const result = await childNode.#lookup(urlPaths, index + 1, params, validate)
       if (result !== null) return result
     }
 
     if (this.slugName !== null) {
       const slugNode = this.children.get('[]')!
-      const result = await slugNode.#lookup(
-        urlPaths,
-        index + 1,
-        { ...params, [this.slugName]: nextSegment },
-        fileHasMethod,
-      )
+      const result = await slugNode.#lookup(urlPaths, index + 1, { ...params, [this.slugName]: nextSegment }, validate)
       if (result !== null) return result
     }
 
     if (this.restSlugName !== null) {
       const restNode = this.children.get('[...]')!
-      if (restNode.file && (await fileHasMethod(restNode.file))) {
+      if (restNode.data && (await validate(restNode.data))) {
         params[this.restSlugName] = urlPaths.slice(index)
-        return { file: restNode.file, params }
+        return { match: restNode.data, params }
       }
     }
 
     if (this.optionalRestSlugName !== null) {
       const optionalRestNode = this.children.get('[[...]]')!
-      if (optionalRestNode.file && (await fileHasMethod(optionalRestNode.file))) {
+      if (optionalRestNode.data && (await validate(optionalRestNode.data))) {
         params[this.optionalRestSlugName] = urlPaths.slice(index)
-        return { file: optionalRestNode.file, params }
+        return { match: optionalRestNode.data, params }
       }
     }
 
@@ -236,84 +232,88 @@ class UrlNode {
 }
 
 /**
- * A file-system based router.
+ * Creates a file-system based router.
  *
  * @example
  * ```ts
- * const router = new Router(fromFileUrl(new URL('./api', import.meta.url)), { baseUrl: '/api' })
- * Deno.serve({ port: 3000 }, (req) => router.route(req))
+ * const { handler } = await createRouter(
+ *   fromFileUrl(new URL('./api', import.meta.url)),
+ *   { baseUrl: '/api' }
+ * )
+ * Deno.serve({ port: 3000, handler })
  * ```
  */
-export class Router {
-  readonly #root = new UrlNode()
-  readonly #dev: boolean
+export async function createRouter(
+  dir: string,
+  { baseUrl = '', dev = false }: { baseUrl?: string; dev?: boolean } = {},
+) {
+  const root = new UrlNode()
 
-  /** req.url.pathname -> { file, params } */
-  readonly #lookupCache = new _LRUCache<string, { file: string; params: Params } | null>(100)
+  /** req.url.pathname -> { match, params } */
+  const lookupCache = new LRUCache<string, { match: string; params: Params } | null>(100)
   /** file:METHOD -> boolean */
-  readonly #fileHasMethodCache = new _LRUCache<string, boolean>(100)
+  const fileHasMethodCache = new LRUCache<string, boolean>(100)
   /** file:METHOD -> handler */
-  readonly #handlerCache = new _LRUCache<string, Handler | null>(100)
+  const handlerCache = new LRUCache<string, Handler | null>(100)
 
-  constructor(dir: string, options: { baseUrl?: string; dev?: boolean } = {}) {
-    const { baseUrl = '', dev = false } = options
-
-    for (const file of walkSync(dir, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
-      let path = baseUrl + file.path.replace(/\\/g, '/').slice(dir.length)
-      if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
-      path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
-      this.#root.insert(path, toFileUrl(file.path).href)
-    }
-
-    this.#dev = dev
+  for await (const file of walk(dir, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
+    let path = baseUrl + file.path.replace(/\\/g, '/').slice(dir.length)
+    if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
+    path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
+    root.insert(path, toFileUrl(file.path).href)
   }
 
-  async route(req: Request): Promise<Response> {
+  function getHandler(file: string, method: string): Promise<Handler | null> {
+    return handlerCache.use(
+      `${file}:${method}`,
+      async () => {
+        try {
+          return (await import(dev ? file + '?t=' + Date.now() : file))?.[method]
+        } catch {
+          return null
+        }
+      },
+      dev,
+    )
+  }
+
+  async function handler(req: Request): Promise<Response> {
     if (!methods.has(req.method)) return new Response('Method Not Allowed', { status: 405 })
     if (req.url.length > 8192) return new Response('URI Too Long', { status: 414 })
 
-    const pathname = new URL(req.url).pathname
+    const { pathname } = new URL(req.url)
 
-    const result = await this.#lookupCache.use(
+    const result = await lookupCache.use(
       pathname,
       () => {
         const fileHasMethod = (file: string) => {
-          const key = `${file}:${req.method}`
-          return this.#fileHasMethodCache.use(
-            key,
-            async () => !!(await this.#getHandler(file, req.method)),
-            this.#dev,
+          return fileHasMethodCache.use(
+            `${file}:${req.method}`,
+            async () => !!(await getHandler(file, req.method)),
+            dev,
           )
         }
 
-        return this.#root.lookup(pathname, fileHasMethod)
+        return root.lookup(pathname, fileHasMethod)
       },
-      this.#dev,
+      dev,
     )
 
     if (result !== null) {
-      return (await this.#getHandler(result.file, req.method))!(req, result.params)
+      return (await getHandler(result.match, req.method))!(req, result.params)
     }
 
     return new Response('Not Found', { status: 404 })
   }
 
-  #getHandler(file: string, method: string): Promise<Handler | null> {
-    return this.#handlerCache.use(
-      `${file}:${method}`,
-      async () => {
-        try {
-          return (await import(this.#dev ? file + '?t=' + Date.now() : file))?.[method]
-        } catch {
-          return null
-        }
-      },
-      this.#dev,
-    )
-  }
+  return { handler }
 }
 
-// TODO: use URLPatternList once it's available (https://github.com/whatwg/urlpattern/pull/166)
-// TODO: use iterative pattern if there is significant memory/performance improvement
-// TODO: use better LRU cache implementation
-// TODO: reload router in dev mode when files are created/deleted
+/**
+ * TODO:
+ * - use URLPatternList once it's available (https://github.com/whatwg/urlpattern/pull/166)
+ * - use iterative pattern if there is significant memory/performance improvement
+ * - use more efficient LRU cache implementation
+ * - reload router in dev mode when files are created/deleted
+ * - use eager loading in production mode
+ */

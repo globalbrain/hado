@@ -15,7 +15,7 @@
 import { assertEquals } from '@std/assert'
 import { getAvailablePort } from '@std/net/get-available-port'
 import { dirname } from '@std/path'
-import { Router } from '../src/router.ts'
+import { createRouter } from '../src/router.ts'
 
 class TempDir {
   constructor(readonly path = Deno.makeTempDirSync({ dir: import.meta.dirname })) {}
@@ -75,8 +75,8 @@ Deno.test('router', async (t) => {
     )
   }
 
-  const router = new Router(temp.path, { baseUrl: '/api' })
-  using server = new Server((req) => router.route(req))
+  const { handler } = await createRouter(temp.path, { baseUrl: '/api' })
+  using server = new Server((req) => handler(req))
 
   // #endregion
 
