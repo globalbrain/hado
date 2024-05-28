@@ -349,17 +349,13 @@ await step('Pushing to GitHub...', async () => {
 await step('Creating a new release...', async () => {
   const changelog = await Deno.readTextFile('CHANGELOG.md')
 
-  let latestChanges =
-    changelog.match(new RegExp(`## ${escape(newVersion)}.*?\n([\\s\\S]*?)(?=\n## |$)`))?.[1]?.trim() ?? ''
-
-  const repoUrl = 'https://github.com/globalbrain/hado'
-  latestChanges += `\n\n**Full Changelog**: ${repoUrl}/commits/v${newVersion}`
+  const match = changelog.match(new RegExp(`## \\[${escape(newVersion)}\\]\\((.*?)\\).*?\n([\\s\\S]*?)(?=\n## |$)`))
 
   const url = newGithubReleaseUrl({
-    repoUrl,
-    tag: `v${newVersion}`,
-    body: latestChanges,
+    body: `${match?.[2]?.trim() ?? ''}\n\n**Full Changelog**: ${match?.[1]?.trim() ?? ''}`,
     isPrerelease: (parse(newVersion).prerelease?.length ?? 0) > 0,
+    repoUrl: 'https://github.com/globalbrain/hado',
+    tag: `v${newVersion}`,
   })
 
   await open(url)
