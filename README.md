@@ -2,16 +2,11 @@
 
 A minimal API framework for Deno.
 
-## Installation
-
-```sh
-deno add @globalbrain/hado
-```
-
 ## Usage
 
 ```ts
-import { createRouter } from '@globalbrain/hado'
+import { createRouter } from 'jsr:@globalbrain/hado/router'
+import { fromFileUrl } from 'jsr:@std/path'
 
 const { handler } = await createRouter(
   fromFileUrl(new URL('./api', import.meta.url)),

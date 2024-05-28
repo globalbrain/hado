@@ -8,5 +8,3 @@
 ### Bug Fixes
 
 - explicit return types ([a8bd7dc](https://github.com/globalbrain/hado/commit/a8bd7dc49ab9696a382dba1179ab5309a8fbab2c))
-
-## 0.0.6 (2024-05-26)
