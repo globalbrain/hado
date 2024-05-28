@@ -1,3 +1,9 @@
+## [0.1.2](https://github.com/globalbrain/hado/compare/v0.1.1...v0.1.2) (2024-05-28)
+
+### Bug Fixes
+
+- `@parcel/watcher` breaking watch mode ([3ecd5a0](https://github.com/globalbrain/hado/commit/3ecd5a01ca578998129e5fd221fe111c68bd70cf))
+
 ## [0.1.1](https://github.com/globalbrain/hado/compare/v0.1.0...v0.1.1) (2024-05-28)
 
 ## [0.1.0](https://github.com/globalbrain/hado/compare/v0.0.6...v0.1.0) (2024-05-28)
