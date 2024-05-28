@@ -1,4 +1,10 @@
 /**
+ * @module
+ *
+ * This module provides functions to create a file-system based router.
+ */
+
+/**
  * Credits:
  *
  * - next - MIT License
@@ -6,12 +12,6 @@
  *     https://github.com/vercel/next.js/blob/canary/license.md
  *     Relevant files:
  *       https://github.com/vercel/next.js/blob/efcec4c1e303848a5293cef6961be8f73fd5160b/packages/next/src/shared/lib/router/utils/sorted-routes.ts
- */
-
-/**
- * @module
- *
- * This module provides functions to create a file-system based router.
  */
 
 import { walk } from '@std/fs'
