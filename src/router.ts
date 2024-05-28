@@ -10,6 +10,7 @@
 
 import { walk } from '@std/fs'
 import { toFileUrl } from '@std/path'
+import watcher from '@parcel/watcher'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 
@@ -238,7 +239,7 @@ class UrlNode {
  * ```ts
  * const { handler } = await createRouter(
  *   fromFileUrl(new URL('./api', import.meta.url)),
- *   { baseUrl: '/api' }
+ *   { baseUrl: '/api', dev: Deno.env.get('DENO_ENV') === 'development' },
  * )
  * Deno.serve({ port: 3000, handler })
  * ```
@@ -249,7 +250,7 @@ export async function createRouter(
 ): Promise<{
   handler: (req: Request) => Promise<Response>
 }> {
-  const root = new UrlNode()
+  let root: UrlNode
 
   /** req.url.pathname -> { match, params } */
   const lookupCache = new LRUCache<string, { match: string; params: Params } | null>(100)
@@ -258,11 +259,26 @@ export async function createRouter(
   /** file:METHOD -> handler */
   const handlerCache = new LRUCache<string, Handler | null>(100)
 
-  for await (const file of walk(dir, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
-    let path = baseUrl + file.path.replace(/\\/g, '/').slice(dir.length)
-    if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
-    path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
-    root.insert(path, toFileUrl(file.path).href)
+  async function createTree() {
+    root = new UrlNode()
+
+    for await (const file of walk(dir, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
+      let path = baseUrl + file.path.replace(/\\/g, '/').slice(dir.length)
+      if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
+      path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
+      root.insert(path, toFileUrl(file.path).href)
+    }
+  }
+
+  await createTree()
+
+  if (dev) {
+    watcher.subscribe(dir, async (_, events) => {
+      if (events.some((event) => event.type === 'create' || event.type === 'delete')) {
+        console.log('Reloading router...')
+        await createTree()
+      }
+    })
   }
 
   function getHandler(file: string, method: string): Promise<Handler | null> {
@@ -318,6 +334,6 @@ export async function createRouter(
  * - use URLPatternList once it's available (https://github.com/whatwg/urlpattern/pull/166)
  * - use iterative pattern if there is significant memory/performance improvement
  * - use more efficient LRU cache implementation
- * - reload router in dev mode when files are created/deleted
  * - use eager loading in production mode
+ * - don't destroy whole tree on single file change
  */
