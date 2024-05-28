@@ -246,7 +246,9 @@ class UrlNode {
 export async function createRouter(
   dir: string,
   { baseUrl = '', dev = false }: { baseUrl?: string; dev?: boolean } = {},
-) {
+): Promise<{
+  handler: (req: Request) => Promise<Response>
+}> {
   const root = new UrlNode()
 
   /** req.url.pathname -> { match, params } */
@@ -306,7 +308,9 @@ export async function createRouter(
     return new Response('Not Found', { status: 404 })
   }
 
-  return { handler }
+  return {
+    handler,
+  }
 }
 
 /**
