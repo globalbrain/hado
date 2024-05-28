@@ -30,7 +30,7 @@
       "jsr:@std/semver@^0.224.0": "jsr:@std/semver@0.224.0",
       "jsr:@std/streams@0.221.0": "jsr:@std/streams@0.221.0",
       "jsr:@std/text@0.221": "jsr:@std/text@0.221.0",
-      "npm:@parcel/watcher@^2.4.1": "npm:@parcel/watcher@2.4.1"
+      "npm:chokidar@^3.6.0": "npm:chokidar@3.6.0"
     },
     "jsr": {
       "@cliffy/ansi@1.0.0-rc.4": {
@@ -144,74 +144,16 @@
       }
     },
     "npm": {
-      "@parcel/watcher-android-arm64@2.4.1": {
-        "integrity": "sha512-LOi/WTbbh3aTn2RYddrO8pnapixAziFl6SMxHM69r3tvdSm94JtCenaKgk1GRg5FJ5wpMCpHeW+7yqPlvZv7kg==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-darwin-arm64@2.4.1": {
-        "integrity": "sha512-ln41eihm5YXIY043vBrrHfn94SIBlqOWmoROhsMVTSXGh0QahKGy77tfEywQ7v3NywyxBBkGIfrWRHm0hsKtzA==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-darwin-x64@2.4.1": {
-        "integrity": "sha512-yrw81BRLjjtHyDu7J61oPuSoeYWR3lDElcPGJyOvIXmor6DEo7/G2u1o7I38cwlcoBHQFULqF6nesIX3tsEXMg==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-freebsd-x64@2.4.1": {
-        "integrity": "sha512-TJa3Pex/gX3CWIx/Co8k+ykNdDCLx+TuZj3f3h7eOjgpdKM+Mnix37RYsYU4LHhiYJz3DK5nFCCra81p6g050w==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-linux-arm-glibc@2.4.1": {
-        "integrity": "sha512-4rVYDlsMEYfa537BRXxJ5UF4ddNwnr2/1O4MHM5PjI9cvV2qymvhwZSFgXqbS8YoTk5i/JR0L0JDs69BUn45YA==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-linux-arm64-glibc@2.4.1": {
-        "integrity": "sha512-BJ7mH985OADVLpbrzCLgrJ3TOpiZggE9FMblfO65PlOCdG++xJpKUJ0Aol74ZUIYfb8WsRlUdgrZxKkz3zXWYA==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-linux-arm64-musl@2.4.1": {
-        "integrity": "sha512-p4Xb7JGq3MLgAfYhslU2SjoV9G0kI0Xry0kuxeG/41UfpjHGOhv7UoUDAz/jb1u2elbhazy4rRBL8PegPJFBhA==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-linux-x64-glibc@2.4.1": {
-        "integrity": "sha512-s9O3fByZ/2pyYDPoLM6zt92yu6P4E39a03zvO0qCHOTjxmt3GHRMLuRZEWhWLASTMSrrnVNWdVI/+pUElJBBBg==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-linux-x64-musl@2.4.1": {
-        "integrity": "sha512-L2nZTYR1myLNST0O632g0Dx9LyMNHrn6TOt76sYxWLdff3cB22/GZX2UPtJnaqQPdCRoszoY5rcOj4oMTtp5fQ==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-win32-arm64@2.4.1": {
-        "integrity": "sha512-Uq2BPp5GWhrq/lcuItCHoqxjULU1QYEcyjSO5jqqOK8RNFDBQnenMMx4gAl3v8GiWa59E9+uDM7yZ6LxwUIfRg==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-win32-ia32@2.4.1": {
-        "integrity": "sha512-maNRit5QQV2kgHFSYwftmPBxiuK5u4DXjbXx7q6eKjq5dsLXZ4FJiVvlcw35QXzk0KrUecJmuVFbj4uV9oYrcw==",
-        "dependencies": {}
-      },
-      "@parcel/watcher-win32-x64@2.4.1": {
-        "integrity": "sha512-+DvS92F9ezicfswqrvIRM2njcYJbd5mb9CUgtrHCHmvn7pPPa+nMDRu1o1bYYz/l5IB2NVGNJWiH7h1E58IF2A==",
-        "dependencies": {}
-      },
-      "@parcel/watcher@2.4.1": {
-        "integrity": "sha512-HNjmfLQEVRZmHRET336f20H/8kOozUGwk7yajvsonjNxbj2wBTK1WsQuHkD5yYh9RxFGL2EyDHryOihOwUoKDA==",
+      "anymatch@3.1.3": {
+        "integrity": "sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==",
         "dependencies": {
-          "@parcel/watcher-android-arm64": "@parcel/watcher-android-arm64@2.4.1",
-          "@parcel/watcher-darwin-arm64": "@parcel/watcher-darwin-arm64@2.4.1",
-          "@parcel/watcher-darwin-x64": "@parcel/watcher-darwin-x64@2.4.1",
-          "@parcel/watcher-freebsd-x64": "@parcel/watcher-freebsd-x64@2.4.1",
-          "@parcel/watcher-linux-arm-glibc": "@parcel/watcher-linux-arm-glibc@2.4.1",
-          "@parcel/watcher-linux-arm64-glibc": "@parcel/watcher-linux-arm64-glibc@2.4.1",
-          "@parcel/watcher-linux-arm64-musl": "@parcel/watcher-linux-arm64-musl@2.4.1",
-          "@parcel/watcher-linux-x64-glibc": "@parcel/watcher-linux-x64-glibc@2.4.1",
-          "@parcel/watcher-linux-x64-musl": "@parcel/watcher-linux-x64-musl@2.4.1",
-          "@parcel/watcher-win32-arm64": "@parcel/watcher-win32-arm64@2.4.1",
-          "@parcel/watcher-win32-ia32": "@parcel/watcher-win32-ia32@2.4.1",
-          "@parcel/watcher-win32-x64": "@parcel/watcher-win32-x64@2.4.1",
-          "detect-libc": "detect-libc@1.0.3",
-          "is-glob": "is-glob@4.0.3",
-          "micromatch": "micromatch@4.0.7",
-          "node-addon-api": "node-addon-api@7.1.0"
+          "normalize-path": "normalize-path@3.0.0",
+          "picomatch": "picomatch@2.3.1"
         }
+      },
+      "binary-extensions@2.3.0": {
+        "integrity": "sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==",
+        "dependencies": {}
       },
       "braces@3.0.3": {
         "integrity": "sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==",
@@ -219,14 +161,39 @@
           "fill-range": "fill-range@7.1.1"
         }
       },
-      "detect-libc@1.0.3": {
-        "integrity": "sha512-pGjwhsmsp4kL2RTz08wcOlGN83otlqHeD/Z5T8GXZB+/YcpQ/dgo+lbU8ZsGxV0HIvqqxo9l7mqYwyYMD9bKDg==",
-        "dependencies": {}
+      "chokidar@3.6.0": {
+        "integrity": "sha512-7VT13fmjotKpGipCW9JEQAusEPE+Ei8nl6/g4FBAmIm0GOOLMua9NDDo/DWp0ZAxCr3cPq5ZpBqmPAQgDda2Pw==",
+        "dependencies": {
+          "anymatch": "anymatch@3.1.3",
+          "braces": "braces@3.0.3",
+          "fsevents": "fsevents@2.3.3",
+          "glob-parent": "glob-parent@5.1.2",
+          "is-binary-path": "is-binary-path@2.1.0",
+          "is-glob": "is-glob@4.0.3",
+          "normalize-path": "normalize-path@3.0.0",
+          "readdirp": "readdirp@3.6.0"
+        }
       },
       "fill-range@7.1.1": {
         "integrity": "sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==",
         "dependencies": {
           "to-regex-range": "to-regex-range@5.0.1"
+        }
+      },
+      "fsevents@2.3.3": {
+        "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
+        "dependencies": {}
+      },
+      "glob-parent@5.1.2": {
+        "integrity": "sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==",
+        "dependencies": {
+          "is-glob": "is-glob@4.0.3"
+        }
+      },
+      "is-binary-path@2.1.0": {
+        "integrity": "sha512-ZMERYes6pDydyuGidse7OsHxtbI7WVeUEozgR/g7rd0xUimYNlvZRE/K2MgZTjWy725IfelLeVcEM97mmtRGXw==",
+        "dependencies": {
+          "binary-extensions": "binary-extensions@2.3.0"
         }
       },
       "is-extglob@2.1.1": {
@@ -243,20 +210,19 @@
         "integrity": "sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==",
         "dependencies": {}
       },
-      "micromatch@4.0.7": {
-        "integrity": "sha512-LPP/3KorzCwBxfeUuZmaR6bG2kdeHSbe0P2tY3FLRU4vYrjYz5hI4QZwV0njUx3jeuKe67YukQ1LSPZBKDqO/Q==",
-        "dependencies": {
-          "braces": "braces@3.0.3",
-          "picomatch": "picomatch@2.3.1"
-        }
-      },
-      "node-addon-api@7.1.0": {
-        "integrity": "sha512-mNcltoe1R8o7STTegSOHdnJNN7s5EUvhoS7ShnTHDyOSd+8H+UdWODq6qSv67PjC8Zc5JRT8+oLAMCr0SIXw7g==",
+      "normalize-path@3.0.0": {
+        "integrity": "sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==",
         "dependencies": {}
       },
       "picomatch@2.3.1": {
         "integrity": "sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==",
         "dependencies": {}
+      },
+      "readdirp@3.6.0": {
+        "integrity": "sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==",
+        "dependencies": {
+          "picomatch": "picomatch@2.3.1"
+        }
       },
       "to-regex-range@5.0.1": {
         "integrity": "sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==",
@@ -278,7 +244,7 @@
       "jsr:@std/path@^0.225.1",
       "jsr:@std/regexp@^0.224.1",
       "jsr:@std/semver@^0.224.0",
-      "npm:@parcel/watcher@^2.4.1"
+      "npm:chokidar@^3.6.0"
     ]
   }
 }

@@ -9,8 +9,8 @@
  */
 
 import { walk } from '@std/fs'
-import { toFileUrl } from '@std/path'
-import watcher from '@parcel/watcher'
+import { joinGlobs, toFileUrl } from '@std/path'
+import chokidar from 'chokidar'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 
@@ -273,12 +273,16 @@ export async function createRouter(
   await createTree()
 
   if (dev) {
-    watcher.subscribe(dir, async (_, events) => {
-      if (events.some((event) => event.type === 'create' || event.type === 'delete')) {
+    chokidar
+      .watch(joinGlobs([dir, '**', '*.ts']), { ignoreInitial: true, ignored: ['**/node_modules/**/*', '**/.git/**'] })
+      .on('add', async () => {
         console.log('Reloading router...')
         await createTree()
-      }
-    })
+      })
+      .on('unlink', async () => {
+        console.log('Reloading router...')
+        await createTree()
+      })
   }
 
   function getHandler(file: string, method: string): Promise<Handler | null> {
@@ -336,4 +340,5 @@ export async function createRouter(
  * - use more efficient LRU cache implementation
  * - use eager loading in production mode
  * - don't destroy whole tree on single file change
+ * - use @parcel/watcher once https://github.com/denoland/deno/issues/20071 is resolved
  */
