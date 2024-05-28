@@ -1,3 +1,9 @@
+## [0.1.5](https://github.com/globalbrain/hado/compare/v0.1.4...v0.1.5) (2024-05-28)
+
+### Bug Fixes
+
+- deno watches all files in import graph, no need for manually invalidating resolver cache ([6c4b8e4](https://github.com/globalbrain/hado/commit/6c4b8e4ce89c4a8a317ca2fd55916b67632c8099))
+
 ## [0.1.4](https://github.com/globalbrain/hado/compare/v0.1.3...v0.1.4) (2024-05-28)
 
 ## [0.1.3](https://github.com/globalbrain/hado/compare/v0.1.2...v0.1.3) (2024-05-28)
