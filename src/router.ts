@@ -296,7 +296,7 @@ export async function createRouter(
       `${file}:${method}`,
       async () => {
         try {
-          return (await import(dev ? file + '?t=' + Date.now() : file))?.[method]
+          return (await import(file))?.[method]
         } catch {
           return null
         }
