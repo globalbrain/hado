@@ -18,6 +18,20 @@ Deno.serve({ port: 3000, handler })
 
 This will serve the `api` directory as an API on `http://localhost:3000/api`.
 
+### Running in development
+
+To run the server in development mode, you can use the following command:
+
+```sh
+DENO_ENV=development deno run --unstable-hmr --allow-env --allow-read --allow-net server.ts
+```
+
+This will enable hot module reloading and will watch for changes in the `api` directory.
+
+You can also use the `--watch` flag instead of `--unstable-hmr` for slightly slower but more stable experience.
+
+## Routing
+
 This is a file-based router, so the directory structure will determine the routes. We follow the same conventions as Next.js:
 
 ```txt
@@ -56,10 +70,6 @@ export function GET(req: Request, params: { id: string }) {
 }
 ```
 
-Catch-all routes are also supported. Refer [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes) for more information.
-
-Here `Request` and `Response` are Deno's built-in request and response objects - documented [here](https://docs.deno.com/deploy/api/runtime-request) and [here](https://docs.deno.com/deploy/api/runtime-response).
-
 The following methods are supported:
 
 - `GET`
@@ -72,6 +82,10 @@ The following methods are supported:
 Methods other than these will be ignored and a 405 status code will be returned.
 
 There is a hard-limit of 8 KiB on the request URL. URLs longer than this will be rejected with a 414 status code.
+
+Catch-all routes are also supported. Refer [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes) for more information.
+
+Here `Request` and `Response` are Deno's built-in request and response objects - documented [here](https://docs.deno.com/deploy/api/runtime-request) and [here](https://docs.deno.com/deploy/api/runtime-response).
 
 ## Contributing
 
