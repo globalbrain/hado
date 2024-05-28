@@ -1,3 +1,5 @@
+## [0.1.6](https://github.com/globalbrain/hado/compare/v0.1.5...v0.1.6) (2024-05-28)
+
 ## [0.1.5](https://github.com/globalbrain/hado/compare/v0.1.4...v0.1.5) (2024-05-28)
 
 ### Bug Fixes
