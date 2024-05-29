@@ -265,7 +265,8 @@ export async function createRouter(
   /** file:METHOD -> handler */
   const handlerCache = new LRUCache<string, Handler | null>(100)
 
-  async function createTree() {
+  async function createTree(log = true) {
+    if (log) console.log('Reloading router...')
     root = new UrlNode()
 
     for await (const file of walk(dir, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
@@ -276,7 +277,7 @@ export async function createRouter(
     }
   }
 
-  await createTree()
+  await createTree(false)
 
   if (dev) {
     chokidar
@@ -290,14 +291,8 @@ export async function createRouter(
           '**/node_modules/**',
         ],
       })
-      .on('add', async () => {
-        console.log('Reloading router...')
-        await createTree()
-      })
-      .on('unlink', async () => {
-        console.log('Reloading router...')
-        await createTree()
-      })
+      .on('add', createTree)
+      .on('unlink', createTree)
   }
 
   function getHandler(file: string, method: string): Promise<Handler | null> {
