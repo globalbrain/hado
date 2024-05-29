@@ -1,3 +1,9 @@
+## [0.1.8](https://github.com/globalbrain/hado/compare/v0.1.7...v0.1.8) (2024-05-29)
+
+### Bug Fixes
+
+- remove redundant ignore patterns ([5befcb4](https://github.com/globalbrain/hado/commit/5befcb467cea3f4eb9e62cca3404ef2eff6f8945))
+
 ## [0.1.7](https://github.com/globalbrain/hado/compare/v0.1.6...v0.1.7) (2024-05-29)
 
 ### Bug Fixes
