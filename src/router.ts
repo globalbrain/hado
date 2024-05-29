@@ -280,7 +280,22 @@ export async function createRouter(
 
   if (dev) {
     chokidar
-      .watch(joinGlobs([dir, '**', '*.ts']), { ignoreInitial: true, ignored: ['**/node_modules/**/*', '**/.git/**'] })
+      .watch(joinGlobs([dir, '**', '*.ts']), {
+        ignoreInitial: true,
+        ignored: [
+          '**/*.d.ts',
+          '**/_*',
+          '**/.*',
+          '**/.git/**',
+          '**/.log/**',
+          '**/.nyc_output/**',
+          '**/.sass-cache/**',
+          '**/.yarn/**',
+          '**/bower_components/**',
+          '**/coverage/**',
+          '**/node_modules/**',
+        ],
+      })
       .on('add', async () => {
         console.log('Reloading router...')
         await createTree()
