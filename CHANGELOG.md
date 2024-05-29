@@ -1,3 +1,9 @@
+## [0.1.7](https://github.com/globalbrain/hado/compare/v0.1.6...v0.1.7) (2024-05-29)
+
+### Bug Fixes
+
+- update chokidar ignore patterns ([a53b351](https://github.com/globalbrain/hado/commit/a53b3511e94936106bdaba4b754302aaf01fea68))
+
 ## [0.1.6](https://github.com/globalbrain/hado/compare/v0.1.5...v0.1.6) (2024-05-28)
 
 ## [0.1.5](https://github.com/globalbrain/hado/compare/v0.1.4...v0.1.5) (2024-05-28)
