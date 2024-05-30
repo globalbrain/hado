@@ -12,10 +12,18 @@
  *     https://github.com/vercel/next.js/blob/canary/license.md
  *     Relevant files:
  *       https://github.com/vercel/next.js/blob/efcec4c1e303848a5293cef6961be8f73fd5160b/packages/next/src/shared/lib/router/utils/sorted-routes.ts
+ *
+ * - deno_std - MIT License
+ *     Copyright 2018-2022 the Deno authors.
+ *     https://github.com/denoland/deno_std/blob/main/LICENSE
+ *     Relevant files:
+ *       https://github.com/denoland/deno_std/blob/main/http/file_server.ts
  */
 
 import { walk } from '@std/fs'
+import { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCode } from '@std/http'
 import { joinGlobs, toFileUrl } from '@std/path'
+import { normalize as posixNormalize } from '@std/path/posix/normalize'
 import chokidar from 'chokidar'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
@@ -253,7 +261,12 @@ class UrlNode {
  * ```
  */
 export async function createRouter(
-  { fsRoot, urlRoot = '', dev = false }: { fsRoot: string; urlRoot?: string; dev?: boolean },
+  { fsRoot, urlRoot = '', static: statik, dev = false }: {
+    fsRoot: string
+    urlRoot?: string
+    static?: ServeDirOptions
+    dev?: boolean
+  },
 ): Promise<{
   handler: (req: Request) => Promise<Response>
 }> {
@@ -271,7 +284,7 @@ export async function createRouter(
     root = new UrlNode()
 
     for await (const file of walk(fsRoot, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
-      let path = urlRoot + file.path.replace(/\\/g, '/').slice(fsRoot.length)
+      let path = file.path.replace(/\\/g, '/').slice(fsRoot.length)
       if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
       path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
       root.insert(path, toFileUrl(file.path).href)
@@ -284,13 +297,7 @@ export async function createRouter(
     chokidar
       .watch(joinGlobs([fsRoot, '**', '*.ts']), {
         ignoreInitial: true,
-        ignored: [
-          '**/*.d.ts',
-          '**/_*',
-          '**/.*',
-          '**/coverage/**',
-          '**/node_modules/**',
-        ],
+        ignored: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'],
       })
       .on('add', createTree)
       .on('unlink', createTree)
@@ -310,38 +317,60 @@ export async function createRouter(
     )
   }
 
+  urlRoot = '/' + urlRoot
+
   async function handler(req: Request): Promise<Response> {
-    if (!methods.has(req.method)) return new Response('Method Not Allowed', { status: 405 })
-    if (req.url.length > 8192) return new Response('URI Too Long', { status: 414 })
+    if (!methods.has(req.method)) return createStandardResponse(STATUS_CODE.MethodNotAllowed)
+    if (req.url.length > 8192) return createStandardResponse(STATUS_CODE.URITooLong)
 
-    const { pathname } = new URL(req.url)
+    const url = new URL(req.url)
+    const decodedUrl = decodeURIComponent(url.pathname)
+    let normalizedPath = posixNormalize(decodedUrl)
 
-    const result = await lookupCache.use(
-      pathname,
-      () => {
-        const fileHasMethod = (file: string) => {
-          return fileHasMethodCache.use(
-            `${file}:${req.method}`,
-            async () => !!(await getHandler(file, req.method)),
-            dev,
-          )
-        }
+    if (normalizedPath.startsWith(urlRoot + '/') || normalizedPath === urlRoot) {
+      if (normalizedPath !== decodedUrl) {
+        url.pathname = normalizedPath
+        return Response.redirect(url, STATUS_CODE.MovedPermanently)
+      }
 
-        return root.lookup(pathname, fileHasMethod)
-      },
-      dev,
-    )
+      normalizedPath = normalizedPath.slice(urlRoot.length)
 
-    if (result !== null) {
-      return (await getHandler(result.match, req.method))!(req, result.params)
+      const result = await lookupCache.use(
+        normalizedPath,
+        () => {
+          const fileHasMethod = (file: string) => {
+            return fileHasMethodCache.use(
+              `${file}:${req.method}`,
+              async () => !!(await getHandler(file, req.method)),
+              dev,
+            )
+          }
+
+          return root.lookup(normalizedPath, fileHasMethod)
+        },
+        dev,
+      )
+
+      if (result !== null) {
+        return (await getHandler(result.match, req.method))!(req, result.params)
+      }
     }
 
-    return new Response('Not Found', { status: 404 })
+    if (statik) {
+      return serveDir(req, { quiet: true, ...statik })
+    }
+
+    return createStandardResponse(STATUS_CODE.NotFound)
   }
 
   return {
     handler,
   }
+}
+
+function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
+  const statusText = STATUS_TEXT[status]
+  return new Response(statusText, { status, statusText, ...init })
 }
 
 /**

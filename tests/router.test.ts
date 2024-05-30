@@ -64,6 +64,7 @@ Deno.test('router', async (t) => {
     '/blog/[id].ts',
     '/foo/[d]/bar/baz/[f].ts',
     '/apples/[ab]/[cd]/ef.ts',
+    '/foo bar.ts',
   ] as const
 
   for (const file of files) {
@@ -75,7 +76,7 @@ Deno.test('router', async (t) => {
     )
   }
 
-  const { handler } = await createRouter({ fsRoot: temp.path, urlRoot: '/api' })
+  const { handler } = await createRouter({ fsRoot: temp.path, urlRoot: 'api' })
   using server = new Server(handler)
 
   // #endregion
@@ -104,6 +105,7 @@ Deno.test('router', async (t) => {
     '/api/apples': { file: '/[root-slug].ts', params: { 'root-slug': 'apples' } },
     '/api/1/2/3': { file: '/[...rest].ts', params: { rest: ['1', '2', '3'] } },
     '/api/blog/1/2': { file: '/[...rest].ts', params: { rest: ['blog', '1', '2'] } },
+    '/api/foo%20bar': { file: '/foo bar.ts', params: {} },
   }
 
   for (const [url, expected] of Object.entries(tests)) {
