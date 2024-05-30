@@ -20,6 +20,7 @@
   "imports": {
     "@cliffy/prompt": "jsr:@cliffy/prompt@^1.0.0-rc.4",
     "@david/dax": "jsr:@david/dax@^0.41.0",
+    "@molt/core": "jsr:@molt/core@^0.18.4",
     "@std/assert": "jsr:@std/assert@^0.225.3",
     "@std/async": "jsr:@std/async@^0.224.1",
     "@std/fmt": "jsr:@std/fmt@^0.225.2",
@@ -39,7 +40,8 @@
     "test": "deno test -A",
     "test:watch": "deno test -A --watch",
     "check": "deno task format:fail && deno task lint:fail && deno task test",
-    "release": "deno run -A ./scripts/release.ts"
+    "release": "deno run -A ./scripts/release.ts",
+    "update": "deno run -A ./scripts/update.ts"
   },
   "fmt": {
     "lineWidth": 120,
