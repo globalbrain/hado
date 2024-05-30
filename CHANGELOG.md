@@ -1,3 +1,13 @@
+## [0.2.0](https://github.com/globalbrain/hado/compare/v0.1.8...v0.2.0) (2024-05-30)
+
+### ⚠ BREAKING CHANGES
+
+- `createRouter` now takes an options object instead of a string
+
+### Features
+
+- change options and add notes on static file handling ([28e56f5](https://github.com/globalbrain/hado/commit/28e56f589ca886184372c4417f6ca309614abbbc))
+
 ## [0.1.8](https://github.com/globalbrain/hado/compare/v0.1.7...v0.1.8) (2024-05-29)
 
 ### Bug Fixes
