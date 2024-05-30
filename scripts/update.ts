@@ -36,6 +36,11 @@ await Deno.remove('deno.lock')
 
 const files =
   (await Array.fromAsync(expandGlob('**/*.ts', { root: Deno.cwd(), includeDirs: false, exclude: ['**/_*', '**/.*'] })))
-    .map((x) => relative(Deno.cwd(), x.path)).join(' ') // simplify when https://github.com/dsherret/dax/issues/251 is supported
+    .map((x) => relative(Deno.cwd(), x.path)).join(' ')
 
 await $.raw`deno cache --reload --lock=deno.lock ${files}`
+
+/**
+ * TODO:
+ * - simplify when https://github.com/dsherret/dax/issues/251 is implemented
+ */

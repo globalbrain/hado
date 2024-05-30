@@ -374,10 +374,23 @@ export async function createRouter(
   }
 }
 
-function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
+/**
+ * Creates a standard response with the given status code.
+ * @param status The status code.
+ * @param init The response init.
+ * @returns The response.
+ *
+ * @example
+ * ```ts
+ * const response = createStandardResponse(STATUS_CODE.NotFound)
+ * ```
+ */
+export function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
   const statusText = STATUS_TEXT[status]
   return new Response(statusText, { status, statusText, ...init })
 }
+
+export { STATUS_CODE } from '@std/http'
 
 /**
  * TODO:
