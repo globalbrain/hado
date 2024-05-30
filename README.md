@@ -30,12 +30,12 @@ This will serve the `api` directory as an API on `http://localhost:3000/api`.
 To run the server in development mode, you can use the following command:
 
 ```sh
-DENO_ENV=development deno run --unstable-hmr --allow-env --allow-read --allow-net server.ts
+DENO_ENV=development deno run --watch --allow-env --allow-read --allow-net server.ts
 ```
 
-This will enable hot module reloading and will watch for changes in the `api` directory.
+This will restart the server on file changes and will watch for changes in the `api` directory.
 
-You can also use the `--watch` flag instead of `--unstable-hmr` for slightly slower but more stable experience.
+You can also use the `--unstable-hmr` flag instead of `--watch` to enable hot module reloading.
 
 ## Routing
 
