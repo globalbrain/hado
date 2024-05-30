@@ -304,6 +304,8 @@ export async function createRouter(
       .on('unlink', createTree)
   }
 
+  const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
+
   function getHandler(file: string, method: string): Promise<Handler | null> {
     return handlerCache.use(
       `${file}:${method}`,
@@ -317,8 +319,6 @@ export async function createRouter(
       dev,
     )
   }
-
-  const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
 
   async function handler(req: Request): Promise<Response> {
     if (!methods.has(req.method)) return createStandardResponse(STATUS_CODE.MethodNotAllowed)
