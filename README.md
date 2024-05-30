@@ -11,10 +11,12 @@ import { fromFileUrl } from 'jsr:@std/path'
 const { handler } = await createRouter({
   fsRoot: fromFileUrl(new URL('./api', import.meta.url)),
   urlRoot: 'api', // optional (default: '')
-  static: { // optional (refer https://deno.land/std/http/file_server.ts?s=serveDir)
+
+  static: { // optional (refer https://jsr.io/@std/http/doc/~/serveDir)
     fsRoot: fromFileUrl(new URL('./public', import.meta.url)),
     urlRoot: 'static', // optional (default: '')
   },
+
   dev: Deno.env.get('DENO_ENV') === 'development',
 })
 
