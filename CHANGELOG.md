@@ -1,3 +1,9 @@
+## [0.3.2](https://github.com/globalbrain/hado/compare/v0.3.1...v0.3.2) (2024-05-30)
+
+### Bug Fixes
+
+- avoid race when a file is renamed ([5864f4f](https://github.com/globalbrain/hado/commit/5864f4f38872691f62d8983ff1d65fd1fa414e0b))
+
 ## [0.3.1](https://github.com/globalbrain/hado/compare/v0.3.0...v0.3.1) (2024-05-30)
 
 ### Bug Fixes
