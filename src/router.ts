@@ -24,6 +24,7 @@ import { walk } from '@std/fs'
 import { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCode } from '@std/http'
 import { joinGlobs, toFileUrl } from '@std/path'
 import { normalize as posixNormalize } from '@std/path/posix/normalize'
+import { escape } from '@std/regexp'
 import chokidar from 'chokidar'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
@@ -284,7 +285,7 @@ export async function createRouter(
     root = new UrlNode()
 
     for await (const file of walk(fsRoot, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
-      let path = file.path.replace(/\\/g, '/').slice(fsRoot.length)
+      let path = file.path.slice(fsRoot.length).replace(/\\/g, '/')
       if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
       path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
       root.insert(path, toFileUrl(file.path).href)
@@ -317,7 +318,7 @@ export async function createRouter(
     )
   }
 
-  urlRoot = '/' + urlRoot
+  const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
 
   async function handler(req: Request): Promise<Response> {
     if (!methods.has(req.method)) return createStandardResponse(STATUS_CODE.MethodNotAllowed)
@@ -327,13 +328,13 @@ export async function createRouter(
     const decodedUrl = decodeURI(url.pathname)
     let normalizedPath = posixNormalize(decodedUrl)
 
-    if (normalizedPath.startsWith(urlRoot + '/') || normalizedPath === urlRoot) {
+    if (urlRootRE.test(normalizedPath)) {
       if (normalizedPath !== decodedUrl) {
         url.pathname = normalizedPath
         return Response.redirect(url, STATUS_CODE.MovedPermanently)
       }
 
-      normalizedPath = normalizedPath.slice(urlRoot.length)
+      normalizedPath = normalizedPath.replace(urlRoot, '')
 
       const result = await lookupCache.use(
         normalizedPath,
