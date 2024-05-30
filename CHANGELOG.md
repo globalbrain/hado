@@ -1,3 +1,18 @@
+## [0.3.0](https://github.com/globalbrain/hado/compare/v0.2.0...v0.3.0) (2024-05-30)
+
+### ⚠ BREAKING CHANGES
+
+- leading slash in `urlRoot` is no longer required
+
+### Features
+
+- normalize path and builtin static file server ([91a8778](https://github.com/globalbrain/hado/commit/91a87788af74b354589d2ec0df697e0df2d67934))
+
+### Bug Fixes
+
+- handle spaces and non-ascii routes properly
+- don't decode characters which are part of the URI syntax ([ad178f0](https://github.com/globalbrain/hado/commit/ad178f00d14d8d3fba78e57eaddef7e754d17be1))
+
 ## [0.2.0](https://github.com/globalbrain/hado/compare/v0.1.8...v0.2.0) (2024-05-30)
 
 ### ⚠ BREAKING CHANGES

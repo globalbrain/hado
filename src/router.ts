@@ -14,7 +14,7 @@
  *       https://github.com/vercel/next.js/blob/efcec4c1e303848a5293cef6961be8f73fd5160b/packages/next/src/shared/lib/router/utils/sorted-routes.ts
  *
  * - deno_std - MIT License
- *     Copyright 2018-2022 the Deno authors.
+ *     Copyright 2018-2024 the Deno authors.
  *     https://github.com/denoland/deno_std/blob/main/LICENSE
  *     Relevant files:
  *       https://github.com/denoland/deno_std/blob/main/http/file_server.ts
