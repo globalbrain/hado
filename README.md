@@ -95,6 +95,8 @@ Catch-all routes are also supported. Refer [Next.js documentation](https://nextj
 
 Here `Request` and `Response` are Deno's built-in request and response objects - documented [here](https://docs.deno.com/deploy/api/runtime-request) and [here](https://docs.deno.com/deploy/api/runtime-response).
 
+Also, note that the API routes will take precedence over static files. It is recommended to specify non-conflicting URL roots for API and static routes.
+
 ## Contributing
 
 This project is a work in progress and is not yet ready for production use. It is meant as an internal tool for [Global Brain Corporation](https://globalbrains.com/en), but we welcome external contributions and feedback. Please feel free to open an issue or a pull request. This project follows Semantic Versioning and the Conventional Commits guidelines.
