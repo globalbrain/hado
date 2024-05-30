@@ -20,6 +20,7 @@
  *       https://github.com/denoland/deno_std/blob/main/http/file_server.ts
  */
 
+import { debounce } from '@std/async'
 import { walk } from '@std/fs'
 import { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCode } from '@std/http'
 import { joinGlobs, toFileUrl } from '@std/path'
@@ -280,8 +281,7 @@ export async function createRouter(
   /** file:METHOD -> handler */
   const handlerCache = new LRUCache<string, Handler | null>(100)
 
-  async function createTree(log = true) {
-    if (log) console.log('Reloading router...')
+  async function createTree() {
     root = new UrlNode()
 
     for await (const file of walk(fsRoot, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
@@ -292,7 +292,12 @@ export async function createRouter(
     }
   }
 
-  await createTree(false)
+  await createTree()
+
+  const reloadRouter = debounce(() => {
+    console.log('Reloading router...')
+    return createTree()
+  }, 100)
 
   if (dev) {
     chokidar
@@ -300,8 +305,8 @@ export async function createRouter(
         ignoreInitial: true,
         ignored: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'],
       })
-      .on('add', createTree)
-      .on('unlink', createTree)
+      .on('add', reloadRouter)
+      .on('unlink', reloadRouter)
   }
 
   const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
