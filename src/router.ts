@@ -324,7 +324,7 @@ export async function createRouter(
     if (req.url.length > 8192) return createStandardResponse(STATUS_CODE.URITooLong)
 
     const url = new URL(req.url)
-    const decodedUrl = decodeURIComponent(url.pathname)
+    const decodedUrl = decodeURI(url.pathname)
     let normalizedPath = posixNormalize(decodedUrl)
 
     if (normalizedPath.startsWith(urlRoot + '/') || normalizedPath === urlRoot) {
