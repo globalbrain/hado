@@ -243,16 +243,17 @@ class UrlNode {
  *
  * @example
  * ```ts
- * const { handler } = await createRouter(
- *   fromFileUrl(new URL('./api', import.meta.url)),
- *   { baseUrl: '/api', dev: Deno.env.get('DENO_ENV') === 'development' },
- * )
+ * const { handler } = await createRouter({
+ *   fsRoot: fromFileUrl(new URL('./api', import.meta.url)),
+ *   urlRoot: '/api',
+ *   dev: Deno.env.get('DENO_ENV') === 'development',
+ * })
+ *
  * Deno.serve({ port: 3000, handler })
  * ```
  */
 export async function createRouter(
-  dir: string,
-  { baseUrl = '', dev = false }: { baseUrl?: string; dev?: boolean } = {},
+  { fsRoot, urlRoot = '', dev = false }: { fsRoot: string; urlRoot?: string; dev?: boolean },
 ): Promise<{
   handler: (req: Request) => Promise<Response>
 }> {
@@ -269,8 +270,8 @@ export async function createRouter(
     if (log) console.log('Reloading router...')
     root = new UrlNode()
 
-    for await (const file of walk(dir, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
-      let path = baseUrl + file.path.replace(/\\/g, '/').slice(dir.length)
+    for await (const file of walk(fsRoot, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
+      let path = urlRoot + file.path.replace(/\\/g, '/').slice(fsRoot.length)
       if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
       path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
       root.insert(path, toFileUrl(file.path).href)
@@ -281,7 +282,7 @@ export async function createRouter(
 
   if (dev) {
     chokidar
-      .watch(joinGlobs([dir, '**', '*.ts']), {
+      .watch(joinGlobs([fsRoot, '**', '*.ts']), {
         ignoreInitial: true,
         ignored: [
           '**/*.d.ts',

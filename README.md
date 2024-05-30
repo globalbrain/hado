@@ -8,10 +8,11 @@ A minimal API framework for Deno.
 import { createRouter } from 'jsr:@globalbrain/hado/router'
 import { fromFileUrl } from 'jsr:@std/path'
 
-const { handler } = await createRouter(
-  fromFileUrl(new URL('./api', import.meta.url)),
-  { baseUrl: '/api', dev: Deno.env.get('DENO_ENV') === 'development' },
-)
+const { handler } = await createRouter({
+  fsRoot: fromFileUrl(new URL('./api', import.meta.url)),
+  urlRoot: '/api',
+  dev: Deno.env.get('DENO_ENV') === 'development',
+})
 
 Deno.serve({ port: 3000, handler })
 ```
@@ -60,13 +61,14 @@ export function POST() {
 }
 ```
 
-Each handler will be called based on the HTTP method and will be passed the request object and matched params:
+Each handler will be called based on the HTTP method and will be passed the request object and matched params. You can also use async functions:
 
 ```ts
 // api/users/[id].ts
 
-export function GET(req: Request, params: { id: string }) {
-  return Response.json({ id: params.id })
+export async function GET(req: Request, params: { id: string }): Promise<Response> {
+  const user = await getUser(params.id)
+  return Response.json(user)
 }
 ```
 
@@ -86,6 +88,41 @@ There is a hard-limit of 8 KiB on the request URL. URLs longer than this will be
 Catch-all routes are also supported. Refer [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes) for more information.
 
 Here `Request` and `Response` are Deno's built-in request and response objects - documented [here](https://docs.deno.com/deploy/api/runtime-request) and [here](https://docs.deno.com/deploy/api/runtime-response).
+
+### Static files
+
+You can use Deno's standard library to serve static files:
+
+```ts
+import { createRouter } from 'jsr:@globalbrain/hado/router'
+import { serveDir } from 'jsr:@std/http'
+import { fromFileUrl } from 'jsr:@std/path'
+
+const { handler } = await createRouter({
+  fsRoot: fromFileUrl(new URL('./api', import.meta.url)),
+  urlRoot: '/api',
+  dev: Deno.env.get('DENO_ENV') === 'development',
+})
+
+Deno.serve({ port: 3000 }, (req) => {
+  if (req.url.startsWith('/api')) return handler(req)
+  return serveDir(req, { fsRoot: fromFileUrl(new URL('./public', import.meta.url)) })
+})
+```
+
+Or if you're not using `urlRoot` in `createRouter` function, you can create `[...rest].ts` file your specified `fsRoot` directory:
+
+```ts
+// api/[...rest].ts
+import { serveDir } from 'jsr:@std/http'
+import { fromFileUrl } from 'jsr:@std/path'
+
+export function GET(req: Request) {
+  return serveDir(req, { fsRoot: fromFileUrl(new URL('../public', import.meta.url)) })
+}
+```
+
+Refer to the [official documentation](https://deno.land/std/http/file_server.ts?s=serveDir) for more information.
 
 ## Contributing
 

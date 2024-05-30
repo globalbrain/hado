@@ -75,7 +75,7 @@ Deno.test('router', async (t) => {
     )
   }
 
-  const { handler } = await createRouter(temp.path, { baseUrl: '/api' })
+  const { handler } = await createRouter({ fsRoot: temp.path, urlRoot: '/api' })
   using server = new Server(handler)
 
   // #endregion
