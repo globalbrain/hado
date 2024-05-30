@@ -1,3 +1,9 @@
+## [0.3.3](https://github.com/globalbrain/hado/compare/v0.3.2...v0.3.3) (2024-05-30)
+
+### Features
+
+- export `createStandardResponse` helper function ([23a7b4a](https://github.com/globalbrain/hado/commit/23a7b4ae68188b03d24656b33355e8c8f326a088))
+
 ## [0.3.2](https://github.com/globalbrain/hado/compare/v0.3.1...v0.3.2) (2024-05-30)
 
 ### Bug Fixes
@@ -8,7 +14,7 @@
 
 ### Bug Fixes
 
-- empty urlRoot not working ([c66da3d](https://github.com/globalbrain/hado/commit/c66da3dc75150728146d4e76e520812f5dbd458e))
+- empty `urlRoot` not working ([c66da3d](https://github.com/globalbrain/hado/commit/c66da3dc75150728146d4e76e520812f5dbd458e))
 
 ## [0.3.0](https://github.com/globalbrain/hado/compare/v0.2.0...v0.3.0) (2024-05-30)
 
