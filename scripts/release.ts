@@ -32,11 +32,11 @@ import {
   type InputOptions,
   Select as _Select,
   type SelectOptions,
-} from '@cliffy/prompt'
-import { $ } from '@david/dax'
-import { black, blue, bold, cyan, dim, gray, green, magenta, red, white, yellow } from '@std/fmt/colors'
-import { escape } from '@std/regexp'
-import { canParse, format, increment, parse, type ReleaseType } from '@std/semver'
+} from 'jsr:@cliffy/prompt@1.0.0-rc.4'
+import { $ } from 'jsr:@david/dax'
+import { black, blue, bold, cyan, dim, gray, green, magenta, red, white, yellow } from 'jsr:@std/fmt/colors'
+import { escape } from 'jsr:@std/regexp'
+import { canParse, format, increment, parse, type ReleaseType } from 'jsr:@std/semver'
 
 const SEMVER_INCREMENTS: ReleaseType[] = ['patch', 'minor', 'major', 'prepatch', 'preminor', 'premajor', 'prerelease']
 
@@ -366,4 +366,5 @@ await step('Creating a new release...', async () => {
 /**
  * TODO:
  * - publish stuff from this script as standalone modules
+ * - remove version from @cliffy/prompt when it's stable
  */

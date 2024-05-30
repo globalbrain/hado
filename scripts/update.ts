@@ -1,7 +1,7 @@
-import { $ } from '@david/dax'
-import { parse, resolveLatestVersion, stringify } from '@molt/core'
-import { expandGlob } from '@std/fs'
-import { relative } from '@std/path'
+import { $ } from 'jsr:@david/dax'
+import { parse, resolveLatestVersion, stringify } from 'jsr:@molt/core'
+import { expandGlob } from 'jsr:@std/fs'
+import { relative } from 'jsr:@std/path'
 
 const denoJson = JSON.parse(await Deno.readTextFile('deno.json')) as { imports: Record<string, string> }
 const newImports = { ...denoJson.imports }
@@ -32,7 +32,15 @@ denoJson.imports = newImports
 await Deno.writeTextFile('deno.json', JSON.stringify(denoJson, null, 2))
 await $.raw`deno fmt deno.json`.quiet()
 
-await Deno.remove('deno.lock')
+try {
+  await Deno.remove('deno.lock')
+} catch (e) {
+  if (e instanceof Deno.errors.NotFound) {
+    // ignore
+  } else {
+    throw e
+  }
+}
 
 const files =
   (await Array.fromAsync(expandGlob('**/*.ts', { root: Deno.cwd(), includeDirs: false, exclude: ['**/_*', '**/.*'] })))
