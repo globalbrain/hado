@@ -33,7 +33,7 @@ You can also use the `--watch` flag instead of `--unstable-hmr` for slightly slo
 
 ## Routing
 
-This is a file-based router, so the directory structure will determine the routes. We follow the same conventions as Next.js:
+Hado has a file-based router, so the directory structure will determine the routes. We follow the same conventions as Next.js:
 
 ```txt
 api/
@@ -114,6 +114,7 @@ Or if you're not using `urlRoot` in `createRouter` function, you can create `[..
 
 ```ts
 // api/[...rest].ts
+
 import { serveDir } from 'jsr:@std/http'
 import { fromFileUrl } from 'jsr:@std/path'
 
