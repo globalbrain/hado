@@ -1,3 +1,9 @@
+## [0.3.1](https://github.com/globalbrain/hado/compare/v0.3.0...v0.3.1) (2024-05-30)
+
+### Bug Fixes
+
+- empty urlRoot not working ([c66da3d](https://github.com/globalbrain/hado/commit/c66da3dc75150728146d4e76e520812f5dbd458e))
+
 ## [0.3.0](https://github.com/globalbrain/hado/compare/v0.2.0...v0.3.0) (2024-05-30)
 
 ### ⚠ BREAKING CHANGES
