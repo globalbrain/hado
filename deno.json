@@ -20,9 +20,9 @@
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^0.226.0",
-    "@std/async": "jsr:@std/async@^0.224.1",
-    "@std/fs": "jsr:@std/fs@^0.229.1",
-    "@std/http": "jsr:@std/http@^0.224.3",
+    "@std/async": "jsr:@std/async@^0.224.2",
+    "@std/fs": "jsr:@std/fs@^0.229.2",
+    "@std/http": "jsr:@std/http@^0.224.4",
     "@std/net": "jsr:@std/net@^0.224.2",
     "@std/path": "jsr:@std/path@^0.225.2",
     "@std/regexp": "jsr:@std/regexp@^0.224.1",
