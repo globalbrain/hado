@@ -84,6 +84,18 @@ export type FetchOptions = {
  * Fetch multiple requests concurrently.\
  * Automatically handles rate limiting, retries, and timeouts.
  *
+ * @example
+ * ```ts
+ * const requests = [
+ *   new Request('https://dummy.restapiexample.com/api/v1/employee/1'),
+ *   new Request('https://dummy.restapiexample.com/api/v1/employee/2'),
+ *   new Request('https://dummy.restapiexample.com/api/v1/employee/3'),
+ * ]
+ *
+ * const responses = await fetchAll(requests)
+ * const data = await Promise.all(responses.map((res) => res.json()))
+ * ```
+ *
  * @param requests The requests to fetch.
  * @param options The fetch options.
  * @returns The responses for each request.
