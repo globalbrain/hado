@@ -54,6 +54,9 @@ const pools = new Map<string, Semaphore>()
 
 // #region Wrapper
 
+/**
+ * Options for {@link fetchAll}.
+ */
 export type FetchOptions = {
   /**
    * The pool key to use for rate limiting.\
