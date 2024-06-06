@@ -106,7 +106,7 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
  *
  * @param requests The requests to fetch.
  * @param options The fetch options.
- * @returns The responses for each request.
+ * @returns The responses. (or parsed and validated JSON data if options.schema is provided)
  *
  * @throws {AggregateError} If any request fails.
  * @throws {import('@std/async').DeadlineError} If the deadline is exceeded.
@@ -114,7 +114,7 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
 export async function fetchAll<Schema extends ZodType | undefined = undefined>(
   requests: Request[],
   options: FetchOptions<Schema> = {},
-): Promise<OutputOrResponse<Schema>[]> {
+): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
   const key = options.pool ?? URL.parse(requests[0]!.url)?.host
   if (!key) throw new Error('No pool key provided')
 
@@ -124,14 +124,14 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
   const p = Promise.allSettled(requests.map((req) => _fetch(req, options, pool)))
   const res = await deadline(p, options.deadline ?? 300_000) // 5 minutes
 
-  const data = extract(res)
+  const { values, errors } = collect(res)
   const schema = options.schema
 
   // @ts-expect-error - conditionally typed
-  if (!schema) return data
+  if (!schema) return { values, errors }
 
-  const parsed = await Promise.allSettled(data.map((res) => res.json().then(schema.parse)))
-  return extract(parsed)
+  const parsed = await Promise.allSettled(values.map((res) => res.json().then(schema.parse)))
+  return collect(parsed, errors)
 }
 
 // #endregion
@@ -197,11 +197,13 @@ function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, 
   return abortable(p, c.signal) as Promise<Exclude<Awaited<typeof p>, void>>
 }
 
-function extract<T>(values: PromiseSettledResult<T>[]): T[] {
-  const errors = values.filter((v): v is PromiseRejectedResult => v.status === 'rejected').map((v) => v.reason)
-  if (errors.length) throw new AggregateError(errors)
-
-  return values.map((v) => (v as PromiseFulfilledResult<T>).value)
+function collect<T>(input: PromiseSettledResult<T>[], errors: unknown[] = []): { values: T[]; errors?: unknown[] } {
+  const values: T[] = []
+  input.forEach((v) => {
+    if (v.status === 'fulfilled') values.push(v.value)
+    else errors.push(v.reason)
+  })
+  return errors.length ? { values, errors } : { values }
 }
 
 // #endregion
