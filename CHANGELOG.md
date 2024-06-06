@@ -1,3 +1,9 @@
+## [0.3.7](https://github.com/globalbrain/hado/compare/v0.3.6...v0.3.7) (2024-06-06)
+
+### Features
+
+- **utils:** allow using zod schema in fetchAll ([c4a3de7](https://github.com/globalbrain/hado/commit/c4a3de7265f58c927661727ce3f5dde8ebff4b25))
+
 ## [0.3.6](https://github.com/globalbrain/hado/compare/v0.3.5...v0.3.6) (2024-06-06)
 
 ## [0.3.5](https://github.com/globalbrain/hado/compare/v0.3.4...v0.3.5) (2024-06-06)
