@@ -1,3 +1,9 @@
+## [0.3.4](https://github.com/globalbrain/hado/compare/v0.3.3...v0.3.4) (2024-06-06)
+
+### Features
+
+- **utils:** add fetchAll ([f482ec9](https://github.com/globalbrain/hado/commit/f482ec9bfe212f2e8e49b5ebbdb2483b2fd33641))
+
 ## [0.3.3](https://github.com/globalbrain/hado/compare/v0.3.2...v0.3.3) (2024-05-30)
 
 ### Features
