@@ -1,7 +1,8 @@
 /**
- * @module
+ * @module router
  *
- * This module provides functions to create a file-system based router.
+ * @description
+ * A file-system based router.
  */
 
 /**
