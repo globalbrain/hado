@@ -26,7 +26,8 @@
     "@std/net": "jsr:@std/net@^0.224.2",
     "@std/path": "jsr:@std/path@^0.225.2",
     "@std/regexp": "jsr:@std/regexp@^0.224.1",
-    "chokidar": "npm:chokidar@^3.6.0"
+    "chokidar": "npm:chokidar@^3.6.0",
+    "zod": "npm:zod@^3.23.8"
   },
   "tasks": {
     "format": "deno fmt",

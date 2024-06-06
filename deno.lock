@@ -55,7 +55,8 @@
       "jsr:@std/streams@0.221.0": "jsr:@std/streams@0.221.0",
       "jsr:@std/streams@^0.224.3": "jsr:@std/streams@0.224.3",
       "jsr:@std/text@0.221": "jsr:@std/text@0.221.0",
-      "npm:chokidar@^3.6.0": "npm:chokidar@3.6.0"
+      "npm:chokidar@^3.6.0": "npm:chokidar@3.6.0",
+      "npm:zod@^3.23.8": "npm:zod@3.23.8"
     },
     "jsr": {
       "@cliffy/ansi@1.0.0-rc.4": {
@@ -354,6 +355,10 @@
         "dependencies": {
           "is-number": "is-number@7.0.0"
         }
+      },
+      "zod@3.23.8": {
+        "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==",
+        "dependencies": {}
       }
     }
   },
@@ -367,7 +372,8 @@
       "jsr:@std/net@^0.224.2",
       "jsr:@std/path@^0.225.2",
       "jsr:@std/regexp@^0.224.1",
-      "npm:chokidar@^3.6.0"
+      "npm:chokidar@^3.6.0",
+      "npm:zod@^3.23.8"
     ]
   }
 }

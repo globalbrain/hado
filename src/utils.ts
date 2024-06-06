@@ -24,6 +24,7 @@
  */
 
 import { abortable, deadline, delay, retry } from '@std/async'
+import type { ZodType } from 'zod'
 
 // #region Pooling
 
@@ -54,10 +55,12 @@ const pools = new Map<string, Semaphore>()
 
 // #region Wrapper
 
+type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
+
 /**
  * Options for {@link fetchAll}.
  */
-export type FetchOptions = {
+export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
   /**
    * The pool key to use for rate limiting.\
    * If not provided, the host of the first request will be used.
@@ -78,6 +81,11 @@ export type FetchOptions = {
    * Default: 300000ms (5 minutes)
    */
   deadline?: number
+  /**
+   * The schema to validate the response body. Only works with JSON responses.\
+   * Default: No validation. (returns the response object)
+   */
+  schema?: Schema
 }
 
 /**
@@ -103,7 +111,10 @@ export type FetchOptions = {
  * @throws {AggregateError} If any request fails.
  * @throws {import('@std/async').DeadlineError} If the deadline is exceeded.
  */
-export async function fetchAll(requests: Request[], options: FetchOptions = {}): Promise<Response[]> {
+export async function fetchAll<Schema extends ZodType | undefined = undefined>(
+  requests: Request[],
+  options: FetchOptions<Schema> = {},
+): Promise<OutputOrResponse<Schema>[]> {
   const key = options.pool ?? URL.parse(requests[0]!.url)?.host
   if (!key) throw new Error('No pool key provided')
 
@@ -113,10 +124,14 @@ export async function fetchAll(requests: Request[], options: FetchOptions = {}):
   const p = Promise.allSettled(requests.map((req) => _fetch(req, options, pool)))
   const res = await deadline(p, options.deadline ?? 300_000) // 5 minutes
 
-  const errors = res.filter((r) => r.status === 'rejected').map((r) => (r as PromiseRejectedResult).reason)
-  if (errors.length) throw new AggregateError(errors)
+  const data = extract(res)
+  const schema = options.schema
 
-  return res.map((r) => (r as PromiseFulfilledResult<Response>).value)
+  // @ts-expect-error - conditionally typed
+  if (!schema) return data
+
+  const parsed = await Promise.allSettled(data.map((res) => res.json().then(schema.parse)))
+  return extract(parsed)
 }
 
 // #endregion
@@ -139,44 +154,54 @@ class FetchError extends Error {
 function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, pool: Semaphore): Promise<Response> {
   const c = new AbortController()
 
-  const p = retry(async () => {
-    await pool.acquire()
+  const p = retry(
+    async () => {
+      await pool.acquire()
 
-    try {
-      const res = await deadline(fetch(req), options.timeout ?? 10_000)
+      try {
+        const res = await deadline(fetch(req), options.timeout ?? 10_000)
 
-      if (res.ok) return res
-      throw new FetchError(req, res)
+        if (res.ok) return res
+        throw new FetchError(req, res)
 
-      //
-    } catch (error: unknown) {
-      if (!retryMethods.has(req.method)) return c.abort(error) // don't retry
+        //
+      } catch (error: unknown) {
+        if (!retryMethods.has(req.method)) return c.abort(error) // don't retry
 
-      if (error instanceof FetchError && retryStatusCodes.has(error.response.status)) {
-        const retryAfter = error.response.headers.get('Retry-After')
+        if (error instanceof FetchError && retryStatusCodes.has(error.response.status)) {
+          const retryAfter = error.response.headers.get('Retry-After')
 
-        if (retryAfter) {
-          let after = Number(retryAfter)
+          if (retryAfter) {
+            let after = Number(retryAfter)
 
-          if (Number.isNaN(after)) after = Date.parse(retryAfter) - Date.now()
-          else after *= 1000
+            if (Number.isNaN(after)) after = Date.parse(retryAfter) - Date.now()
+            else after *= 1000
 
-          if (after > 60_000) return c.abort(error) // too long, don't retry
-          if (after > 0) await delay(after)
+            if (after > 60_000) return c.abort(error) // too long, don't retry
+            if (after > 0) await delay(after)
+          }
         }
+
+        throw error
+
+        //
+      } finally {
+        pool.release()
       }
 
-      throw error
-
       //
-    } finally {
-      pool.release()
-    }
-
-    //
-  }, { maxAttempts: options.retry ?? 5 })
+    },
+    { maxAttempts: options.retry ?? 5 },
+  )
 
   return abortable(p, c.signal) as Promise<Exclude<Awaited<typeof p>, void>>
+}
+
+function extract<T>(values: PromiseSettledResult<T>[]): T[] {
+  const errors = values.filter((v): v is PromiseRejectedResult => v.status === 'rejected').map((v) => v.reason)
+  if (errors.length) throw new AggregateError(errors)
+
+  return values.map((v) => (v as PromiseFulfilledResult<T>).value)
 }
 
 // #endregion
