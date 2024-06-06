@@ -1,3 +1,13 @@
+## [0.4.0](https://github.com/globalbrain/hado/compare/v0.3.7...v0.4.0) (2024-06-06)
+
+### ⚠ BREAKING CHANGES
+
+- **utils:** `fetchAll` now returns an object containing values and errors as arrays
+
+### Features
+
+- **utils:** return errors as array instead of throwing ([c32680b](https://github.com/globalbrain/hado/commit/c32680b07dbff0bca3ada4f5c62055a572d01c80))
+
 ## [0.3.7](https://github.com/globalbrain/hado/compare/v0.3.6...v0.3.7) (2024-06-06)
 
 ### Features
