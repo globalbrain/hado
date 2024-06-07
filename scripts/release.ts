@@ -1,13 +1,11 @@
 /**
  * Credits:
  *
- * - ora, np, new-github-release-url, is-in-ci, cli-spinners - MIT License
+ * - np, new-github-release-url, is-in-ci - MIT License
  *     Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
- *     https://github.com/sindresorhus/ora/blob/main/license
  *     https://github.com/sindresorhus/np/blob/main/license
  *     https://github.com/sindresorhus/new-github-release-url/blob/main/license
  *     https://github.com/sindresorhus/is-in-ci/blob/main/license
- *     https://github.com/sindresorhus/cli-spinners/blob/main/license
  *
  * - bumpp, version-bump-prompt - MIT License
  *     Copyright (c) 2022 Anthony Fu
@@ -34,7 +32,8 @@ import {
   type SelectOptions,
 } from 'jsr:@cliffy/prompt@1.0.0-rc.4'
 import { $ } from 'jsr:@david/dax'
-import { black, blue, bold, cyan, dim, gray, green, magenta, red, white, yellow } from 'jsr:@std/fmt/colors'
+import { Spinner } from 'jsr:@std/cli'
+import { bold, cyan, dim, green, magenta } from 'jsr:@std/fmt/colors'
 import { escape } from 'jsr:@std/regexp'
 import { canParse, format, increment, parse, type ReleaseType } from 'jsr:@std/semver'
 
@@ -119,11 +118,7 @@ class Input extends _Input {
 
 // #endregion
 
-// #region Ora
-
-const colors = { black, red, green, yellow, blue, magenta, cyan, white, gray }
-
-type Color = keyof typeof colors
+// #region Step
 
 const env = Deno.env.toObject()
 
@@ -131,48 +126,8 @@ const isEnabled = Deno.stdout.isTerminal() &&
   !(env.CI !== '0' && env.CI !== 'false' &&
     ('CI' in env || 'CONTINUOUS_INTEGRATION' in env || Object.keys(env).some((key) => key.startsWith('CI_'))))
 
-type Spinner = { interval?: number; frames: string[] }
-
-const spinners: Record<'dots', Spinner> = {
-  dots: { interval: 80, frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'] },
-}
-
 const okMark = '\x1b[32m✓\x1b[0m'
 const failMark = '\x1b[31m✗\x1b[0m'
-
-type OraOptions = {
-  /**
-   * Text to display after the spinner.
-   */
-  text?: string
-
-  /**
-   * The spinner to use. On Windows, it will always use the line spinner as the Windows command-line doesn't have proper Unicode support.
-   *
-   * @example
-   * ```ts
-   * {
-   *   interval: 80, // Optional
-   *   frames: ['-', '+', '-']
-   * }
-   * ```
-   */
-  spinner?: Spinner
-
-  /**
-   * The color of the spinner.
-   *
-   * @default 'cyan'
-   */
-  color?: Color
-
-  /**
-   * Indent the spinner with the given number of spaces.
-   *
-   * @default 0
-   */
-  indent?: number
-}
 
 /**
  * Run a function with a spinner.
@@ -182,28 +137,17 @@ type OraOptions = {
  * await step('Loading...', async () => {})
  * ```
  */
-async function step(options: OraOptions | string = {}, fn: () => Promise<void>): Promise<void> {
-  if (typeof options === 'string') options = { text: options }
-
-  let { text, spinner = spinners.dots, color = 'cyan', indent = 0 } = options
-
+async function step(text: string, fn: () => Promise<void>): Promise<void> {
   if (!isEnabled) {
-    console.log(`${' '.repeat(indent)}${text}`)
+    console.log(text)
     await fn()
     return
   }
 
-  text = text ? bold(` ${text}`) : ''
-  if (Deno.build.os === 'windows') spinner = { frames: ['-', '\\', '|', '/'] }
+  text = bold(text)
 
-  let currentFrame = 0
-
-  const interval = setInterval(() => {
-    Deno.stdout.write(
-      new TextEncoder().encode(`\r${' '.repeat(indent)}${colors[color](spinner.frames[currentFrame]!)}${text}`),
-    )
-    currentFrame = (currentFrame + 1) % spinner.frames.length
-  }, spinner.interval ?? 100)
+  const spinner = new Spinner({ message: text, color: 'cyan' })
+  spinner.start()
 
   let success = false
 
@@ -211,11 +155,10 @@ async function step(options: OraOptions | string = {}, fn: () => Promise<void>):
     await fn()
     success = true
   } finally {
-    clearInterval(interval)
-    Deno.stdout.write(new TextEncoder().encode('\r\x1b[K'))
+    spinner.stop()
 
-    if (success) console.log(`${' '.repeat(indent)}${okMark}${text}`)
-    else console.log(`${' '.repeat(indent)}${failMark}${text}`)
+    if (success) console.log(`${okMark} ${text}`)
+    else console.log(`${failMark} ${text}`)
   }
 }
 

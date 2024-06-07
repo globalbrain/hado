@@ -1,13 +1,17 @@
 import { $ } from 'jsr:@david/dax'
 import { parse, resolveLatestVersion, stringify } from 'jsr:@molt/core'
+import { parseArgs } from 'jsr:@std/cli'
 import { expandGlob } from 'jsr:@std/fs'
 import { relative } from 'jsr:@std/path'
+
+const args = parseArgs(Deno.args, { collect: ['x'] })
+const excludes = (args.x ?? []) as string[]
 
 const denoJson = JSON.parse(await Deno.readTextFile('deno.json')) as { imports: Record<string, string> }
 const newImports = { ...denoJson.imports }
 
 for (const [key, value] of Object.entries(denoJson.imports)) {
-  if (!value.includes(':')) continue
+  if (!value.includes(':') || excludes.includes(key)) continue
 
   const parsed = parse(value)
   let rangeSpecifier: string | undefined = undefined
