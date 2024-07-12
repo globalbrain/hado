@@ -23,11 +23,12 @@
 
 import { debounce } from '@std/async'
 import { walk } from '@std/fs'
-import { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCode } from '@std/http'
+import { serveDir, type ServeDirOptions, STATUS_CODE } from '@std/http'
 import { joinGlobs, toFileUrl } from '@std/path'
 import { normalize as posixNormalize } from '@std/path/posix/normalize'
 import { escape } from '@std/regexp'
 import chokidar from 'chokidar'
+import { createStandardResponse } from './http.ts'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 
@@ -374,24 +375,6 @@ export async function createRouter(
     handler,
   }
 }
-
-/**
- * Creates a standard response with the given status code.
- * @param status The status code.
- * @param init The response init.
- * @returns The response.
- *
- * @example
- * ```ts
- * const response = createStandardResponse(STATUS_CODE.NotFound)
- * ```
- */
-export function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
-  const statusText = STATUS_TEXT[status]
-  return new Response(statusText, { status, statusText, ...init })
-}
-
-export { STATUS_CODE } from '@std/http'
 
 /**
  * TODO:

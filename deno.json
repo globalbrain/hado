@@ -2,6 +2,7 @@
   "name": "@globalbrain/hado",
   "version": "0.4.2",
   "exports": {
+    "./http": "./src/http.ts",
     "./router": "./src/router.ts",
     "./utils": "./src/utils.ts"
   },
@@ -19,13 +20,13 @@
     "noUnusedParameters": true
   },
   "imports": {
-    "@std/assert": "jsr:@std/assert@^0.226.0",
+    "@std/assert": "jsr:@std/assert@^1.0.0",
     "@std/async": "jsr:@std/async@^0.224.2",
-    "@std/fs": "jsr:@std/fs@^0.229.2",
-    "@std/http": "jsr:@std/http@^0.224.4",
-    "@std/net": "jsr:@std/net@^0.224.2",
-    "@std/path": "jsr:@std/path@^0.225.2",
-    "@std/regexp": "jsr:@std/regexp@^0.224.1",
+    "@std/fs": "jsr:@std/fs@^0.229.3",
+    "@std/http": "jsr:@std/http@^0.224.5",
+    "@std/net": "jsr:@std/net@^0.224.5",
+    "@std/path": "jsr:@std/path@^1.0.0",
+    "@std/regexp": "jsr:@std/regexp@^1.0.0",
     "chokidar": "npm:chokidar@^3.6.0",
     "zod": "npm:zod@^3.23.8"
   },

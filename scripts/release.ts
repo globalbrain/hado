@@ -30,7 +30,7 @@ import {
   type InputOptions,
   Select as _Select,
   type SelectOptions,
-} from 'jsr:@cliffy/prompt@1.0.0-rc.4'
+} from 'jsr:@cliffy/prompt@1.0.0-rc.5'
 import { $ } from 'jsr:@david/dax'
 import { Spinner } from 'jsr:@std/cli'
 import { bold, cyan, dim, green, magenta } from 'jsr:@std/fmt/colors'
