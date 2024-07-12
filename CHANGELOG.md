@@ -1,3 +1,13 @@
+## [0.5.0](https://github.com/globalbrain/hado/compare/v0.4.2...v0.5.0) (2024-07-12)
+
+### ⚠ BREAKING CHANGES
+
+- `createStandardResponse` and `STATUS_CODE` are now exported from `hado/http` instead of `hado/router`
+
+### Features
+
+- re-export everything from the `@std/http` module ([fe52d32](https://github.com/globalbrain/hado/commit/fe52d32d5f295bd961f3572b4022e3fd1455dbd9))
+
 ## [0.4.2](https://github.com/globalbrain/hado/compare/v0.4.1...v0.4.2) (2024-06-07)
 
 ## [0.4.1](https://github.com/globalbrain/hado/compare/v0.4.0...v0.4.1) (2024-06-06)
