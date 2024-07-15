@@ -1,3 +1,13 @@
+## [0.6.0](https://github.com/globalbrain/hado/compare/v0.5.0...v0.6.0) (2024-07-15)
+
+### ⚠ BREAKING CHANGES
+
+- hado/http is removed, exports are now same as 0.4.2
+
+### Features
+
+- split deps and devDeps ([75a8f78](https://github.com/globalbrain/hado/commit/75a8f78271a94eb3fdd6c772f67d78fdbac82a58))
+
 ## [0.5.0](https://github.com/globalbrain/hado/compare/v0.4.2...v0.5.0) (2024-07-12)
 
 ### ⚠ BREAKING CHANGES
