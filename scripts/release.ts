@@ -24,18 +24,26 @@
 // #region Imports
 
 import {
+  $,
+  bold,
+  canParse,
   Confirm as _Confirm,
   type ConfirmOptions,
+  cyan,
+  dim,
+  escape,
+  format,
+  green,
+  increment,
   Input as _Input,
   type InputOptions,
+  magenta,
+  parseSemVer,
+  type ReleaseType,
   Select as _Select,
   type SelectOptions,
-} from 'jsr:@cliffy/prompt@1.0.0-rc.5'
-import { $ } from 'jsr:@david/dax'
-import { Spinner } from 'jsr:@std/cli'
-import { bold, cyan, dim, green, magenta } from 'jsr:@std/fmt/colors'
-import { escape } from 'jsr:@std/regexp'
-import { canParse, format, increment, parse, type ReleaseType } from 'jsr:@std/semver'
+  Spinner,
+} from '../devDeps.ts'
 
 const SEMVER_INCREMENTS: ReleaseType[] = ['patch', 'minor', 'major', 'prepatch', 'preminor', 'premajor', 'prerelease']
 
@@ -44,7 +52,7 @@ function isReleaseType(value: string): value is ReleaseType {
 }
 
 const denoJson = JSON.parse(await Deno.readTextFile('deno.json'))
-const oldVersion = parse(denoJson.version)
+const oldVersion = parseSemVer(denoJson.version)
 
 // #endregion
 
@@ -259,7 +267,7 @@ if (version === 'other') {
   })
 }
 
-const newVersion = format(isReleaseType(version) ? increment(oldVersion, version) : parse(version))
+const newVersion = format(isReleaseType(version) ? increment(oldVersion, version) : parseSemVer(version))
 
 if (!(await Confirm.prompt({ message: `Bump ${dim(`(${denoJson.version} → ${newVersion})`)}?` }))) Deno.exit()
 
@@ -296,7 +304,7 @@ await step('Creating a new release...', async () => {
 
   const url = newGithubReleaseUrl({
     body: `${match?.[2]?.trim() ?? ''}\n\n**Full Changelog**: ${match?.[1]?.trim() ?? ''}`,
-    isPrerelease: (parse(newVersion).prerelease?.length ?? 0) > 0,
+    isPrerelease: (parseSemVer(newVersion).prerelease?.length ?? 0) > 0,
     repoUrl: 'https://github.com/globalbrain/hado',
     tag: `v${newVersion}`,
   })

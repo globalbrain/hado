@@ -21,14 +21,20 @@
  *       https://github.com/denoland/deno_std/blob/main/http/file_server.ts
  */
 
-import { debounce } from '@std/async'
-import { walk } from '@std/fs'
-import { serveDir, type ServeDirOptions, STATUS_CODE } from '@std/http'
-import { joinGlobs, toFileUrl } from '@std/path'
-import { normalize as posixNormalize } from '@std/path/posix/normalize'
-import { escape } from '@std/regexp'
-import chokidar from 'chokidar'
-import { createStandardResponse } from './http.ts'
+import {
+  debounce,
+  escape,
+  joinGlobs,
+  posixNormalize,
+  serveDir,
+  type ServeDirOptions,
+  STATUS_CODE,
+  STATUS_TEXT,
+  type StatusCode,
+  toFileUrl,
+  walk,
+  watch,
+} from '../deps.ts'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 
@@ -271,9 +277,7 @@ export async function createRouter(
     static?: ServeDirOptions
     dev?: boolean
   },
-): Promise<{
-  handler: (req: Request) => Promise<Response>
-}> {
+): Promise<{ handler: (req: Request) => Promise<Response> }> {
   let root: UrlNode
 
   /** req.url.pathname -> { match, params } */
@@ -302,11 +306,10 @@ export async function createRouter(
   }, 100)
 
   if (dev) {
-    chokidar
-      .watch(joinGlobs([fsRoot, '**', '*.ts']), {
-        ignoreInitial: true,
-        ignored: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'],
-      })
+    watch(joinGlobs([fsRoot, '**', '*.ts']), {
+      ignoreInitial: true,
+      ignored: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'],
+    })
       .on('add', reloadRouter)
       .on('unlink', reloadRouter)
   }
@@ -371,9 +374,23 @@ export async function createRouter(
     return createStandardResponse(STATUS_CODE.NotFound)
   }
 
-  return {
-    handler,
-  }
+  return { handler }
+}
+
+/**
+ * Creates a standard response with the given status code.
+ * @param status The status code.
+ * @param init The response init.
+ * @returns The response.
+ *
+ * @example
+ * ```ts
+ * const response = createStandardResponse(STATUS_CODE.NotFound)
+ * ```
+ */
+export function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
+  const statusText = STATUS_TEXT[status]
+  return new Response(statusText, { status, statusText, ...init })
 }
 
 /**

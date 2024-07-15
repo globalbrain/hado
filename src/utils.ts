@@ -23,8 +23,7 @@
  *       https://github.com/nodejs/undici/blob/5f11247b34510a3dc821da3c10d3cea0f39a7b13/lib/handler/retry-handler.js
  */
 
-import { abortable, deadline, delay, retry } from '@std/async'
-import type { ZodType } from 'zod'
+import { abortable, deadline, delay, retry, type ZodType } from '../deps.ts'
 
 // #region Pooling
 
