@@ -60,7 +60,7 @@ const isJsrPackageMeta = is.ObjectOf({
 
 // #endregion
 
-// update dependencies in files
+// update deps in files
 
 const files = (await $`git ls-files -- '*.ts'`.text())
   .split('\n')
