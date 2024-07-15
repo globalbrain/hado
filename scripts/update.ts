@@ -80,8 +80,7 @@ await $`deno fmt deno.json`
 
 // update deps in files
 
-const files = (await $`git ls-files -- '*.ts'`.text())
-  .split('\n').filter(Boolean).map((file) => toFileUrl(resolve(file)).href)
+const files = (await $`git ls-files -- '*.ts'`.lines()).filter(Boolean).map((file) => toFileUrl(resolve(file)).href)
 
 const resolvedImportMap = await parseFromJson(toFileUrl(resolve('deno.json')), importMap, { expandImports: true })
 
@@ -104,7 +103,7 @@ try {
   }
 }
 
-await $`deno cache --reload --lock=deno.lock ${files.join(' ')}`
+await $`deno cache --reload --lock=deno.lock ${files.map((name) => $.escapeArg(name)).join(' ')}`
 
 // #region Update logic
 

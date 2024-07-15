@@ -1,4 +1,4 @@
-import { $ as _$ } from 'jsr:@david/dax@^0.41.0'
+import { $ as _$, type $Type } from 'jsr:@david/dax@^0.41.0'
 
 export { parseFromJson } from 'https://deno.land/x/import_map@v0.20.0/mod.ts'
 export {
@@ -24,7 +24,7 @@ export { escape } from 'jsr:@std/regexp@^1.0.0'
 export * as SemVer from 'jsr:@std/semver@^1.0.0-rc.2'
 
 export const $ = new Proxy(_$, {
-  apply(target, _, args: Parameters<typeof _$.raw>) {
-    return target.raw(...args).quiet()
+  apply(target, thisArg, args: Parameters<$Type>) {
+    return Reflect.apply(target.raw, thisArg, args).quiet()
   },
 })
