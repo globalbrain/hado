@@ -26,33 +26,37 @@
 import {
   $,
   bold,
-  canParse,
   Confirm as _Confirm,
   type ConfirmOptions,
   cyan,
   dim,
   escape,
-  format,
   green,
-  increment,
   Input as _Input,
   type InputOptions,
   magenta,
-  parseSemVer,
-  type ReleaseType,
   Select as _Select,
   type SelectOptions,
+  SemVer,
   Spinner,
 } from '../dev_deps.ts'
 
-const SEMVER_INCREMENTS: ReleaseType[] = ['patch', 'minor', 'major', 'prepatch', 'preminor', 'premajor', 'prerelease']
+const SEMVER_INCREMENTS: SemVer.ReleaseType[] = [
+  'patch',
+  'minor',
+  'major',
+  'prepatch',
+  'preminor',
+  'premajor',
+  'prerelease',
+]
 
-function isReleaseType(value: string): value is ReleaseType {
-  return SEMVER_INCREMENTS.includes(value as ReleaseType)
+function isReleaseType(value: string): value is SemVer.ReleaseType {
+  return SEMVER_INCREMENTS.includes(value as SemVer.ReleaseType)
 }
 
 const denoJson = JSON.parse(await Deno.readTextFile('deno.json'))
-const oldVersion = parseSemVer(denoJson.version)
+const oldVersion = SemVer.parse(denoJson.version)
 
 // #endregion
 
@@ -87,7 +91,7 @@ class Select extends _Select<string> {
     name = name + ''
 
     if (isReleaseType(name)) {
-      const newVersion = increment(oldVersion, name)
+      const newVersion = SemVer.increment(oldVersion, name)
 
       const newMajor = newVersion.major + ''
       const newMinor = newVersion.minor + ''
@@ -242,7 +246,7 @@ async function open(url: string): Promise<void> {
     console.error('Unsupported OS. Please open the following URL manually:\n' + url)
     return
   }
-  await $.raw`${programAliases[Deno.build.os]} ${$.escapeArg(url)}`
+  await $`${programAliases[Deno.build.os]} ${$.escapeArg(url)}`
 }
 
 // #endregion
@@ -261,40 +265,38 @@ if (version === 'other') {
     message: 'Enter new version',
     validate: (value) => {
       if (!value) return 'Version is required'
-      if (!canParse(value)) return 'Invalid semver version'
+      if (!SemVer.canParse(value)) return 'Invalid semver version'
       return true
     },
   })
 }
 
-const newVersion = format(isReleaseType(version) ? increment(oldVersion, version) : parseSemVer(version))
+const newVersion = SemVer.format(isReleaseType(version) ? SemVer.increment(oldVersion, version) : SemVer.parse(version))
 
 if (!(await Confirm.prompt({ message: `Bump ${dim(`(${denoJson.version} → ${newVersion})`)}?` }))) Deno.exit()
 
 await step('Updating version in deno.json...', async () => {
   denoJson.version = newVersion
   await Deno.writeTextFile('deno.json', JSON.stringify(denoJson, null, 2))
-  await $.raw`deno fmt deno.json`.quiet()
+  await $`deno fmt deno.json`
 })
 
 await step('Generating changelog...', async () => {
-  await $
-    .raw`deno run -A --no-lock npm:conventional-changelog-cli -i CHANGELOG.md -s -p conventionalcommits -k deno.json`
-    .quiet()
-  await $.raw`deno fmt CHANGELOG.md`.quiet()
+  await $`deno run -A --no-lock npm:conventional-changelog-cli -i CHANGELOG.md -s -p conventionalcommits -k deno.json`
+  await $`deno fmt CHANGELOG.md`
 })
 
 if (!(await Confirm.prompt({ message: 'Changelog generated. Does it look good?' }))) Deno.exit()
 
 await step('Committing changes...', async () => {
-  await $.raw`git add deno.json CHANGELOG.md`.quiet()
-  await $.raw`git commit -m "release: v${newVersion}"`.quiet()
-  await $.raw`git tag v${newVersion}`.quiet()
+  await $`git add deno.json CHANGELOG.md`
+  await $`git commit -m "release: v${newVersion}"`
+  await $`git tag v${newVersion}`
 })
 
 await step('Pushing to GitHub...', async () => {
-  await $.raw`git push origin refs/tags/v${newVersion}`.quiet()
-  await $.raw`git push`.quiet()
+  await $`git push origin refs/tags/v${newVersion}`
+  await $`git push`
 })
 
 await step('Creating a new release...', async () => {
@@ -304,7 +306,7 @@ await step('Creating a new release...', async () => {
 
   const url = newGithubReleaseUrl({
     body: `${match?.[2]?.trim() ?? ''}\n\n**Full Changelog**: ${match?.[1]?.trim() ?? ''}`,
-    isPrerelease: (parseSemVer(newVersion).prerelease?.length ?? 0) > 0,
+    isPrerelease: (SemVer.parse(newVersion).prerelease?.length ?? 0) > 0,
     repoUrl: 'https://github.com/globalbrain/hado',
     tag: `v${newVersion}`,
   })
@@ -317,5 +319,4 @@ await step('Creating a new release...', async () => {
 /**
  * TODO:
  * - publish stuff from this script as standalone modules
- * - remove version from @cliffy/prompt when it's stable
  */
