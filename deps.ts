@@ -1,5 +1,3 @@
-import type {} from 'npm:@types/node'
-
 export { abortable, deadline, debounce, delay, retry } from 'jsr:@std/async@^1.0.0-rc.4'
 export { walk } from 'jsr:@std/fs@^1.0.0-rc.5'
 export { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.0-rc.4'
