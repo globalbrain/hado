@@ -43,7 +43,7 @@ import {
   Select as _Select,
   type SelectOptions,
   Spinner,
-} from '../devDeps.ts'
+} from '../dev_deps.ts'
 
 const SEMVER_INCREMENTS: ReleaseType[] = ['patch', 'minor', 'major', 'prepatch', 'preminor', 'premajor', 'prerelease']
 

@@ -1,4 +1,4 @@
-import { $, expandGlob, parseArgs, parseDependency, relative, resolveLatestVersion, stringify } from '../devDeps.ts'
+import { $, expandGlob, parseArgs, parseDependency, relative, resolveLatestVersion, stringify } from '../dev_deps.ts'
 
 const args = parseArgs(Deno.args, { collect: ['x'] })
 const excludes = (args.x ?? []) as string[]
