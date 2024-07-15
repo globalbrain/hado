@@ -17,6 +17,7 @@ import {
   is,
   loadGraph,
   Mutex,
+  parseArgs,
   parseFromJson,
   resolve,
   type ResolvedDependency,
@@ -60,52 +61,36 @@ const isJsrPackageMeta = is.ObjectOf({
 
 // #endregion
 
+const args = parseArgs(Deno.args, { collect: ['x'] })
+const excludes = (args.x ?? []) as string[]
+
+// update deps in deno.json
+
+let importMap = await Deno.readTextFile('deno.json')
+const denoJson = JSON.parse(importMap) as { imports: Record<string, string> | undefined }
+
+denoJson.imports = Object.fromEntries(
+  await Promise.all(
+    Object.entries(denoJson.imports ?? {}).map(async ([key, value]) => [key, await updateSpecifier(value)]),
+  ),
+)
+
+await Deno.writeTextFile('deno.json', importMap = JSON.stringify(denoJson, null, 2))
+await $`deno fmt deno.json`
+
 // update deps in files
 
 const files = (await $`git ls-files -- '*.ts'`.text())
-  .split('\n')
-  .filter(Boolean)
-  .map((file) => toFileUrl(resolve(file)).href)
+  .split('\n').filter(Boolean).map((file) => toFileUrl(resolve(file)).href)
 
-const importMap = await Deno.readTextFile('deno.json')
 const resolvedImportMap = await parseFromJson(toFileUrl(resolve('deno.json')), importMap, { expandImports: true })
 
 const graph = await createGraph(files, {
   resolve: resolvedImportMap.resolve.bind(resolvedImportMap),
-  // deno-lint-ignore require-await
-  load: async (specifier) => {
-    return files.includes(specifier) ? loadGraph(specifier) : undefined
-  },
+  load: async (specifier) => files.includes(specifier) ? await loadGraph(specifier) : undefined,
 })
 
-const modules = graph.modules
-  .filter(({ specifier }) => files.includes(specifier))
-  .map((mod) => ({
-    specifier: mod.specifier,
-    dependencies: (mod.dependencies ?? []).filter((dep) =>
-      // deno-lint-ignore no-explicit-any
-      supportedProtocols.includes(URL.parse(dep.specifier)?.protocol as any)
-    ),
-  }))
-  .filter((mod) => mod.dependencies.length)
-
-for (const mod of modules) {
-  updateDepsInFile(fromFileUrl(mod.specifier), mod.dependencies)
-}
-
-// update deps in deno.json
-
-const denoJson = JSON.parse(importMap) as { imports: Record<string, string> | undefined }
-const newImports = { ...denoJson.imports }
-
-for (const [key, value] of Object.entries(denoJson.imports ?? {})) {
-  newImports[key] = await updateSpecifier(value)
-}
-
-denoJson.imports = newImports
-
-await Deno.writeTextFile('deno.json', JSON.stringify(denoJson, null, 2))
-await $`deno fmt deno.json`
+await Promise.all(graph.modules.map((mod) => updateDepsInFile(mod.specifier, mod.dependencies)))
 
 // regenerate lock file
 
@@ -123,7 +108,10 @@ await $`deno cache --reload --lock=deno.lock ${files.join(' ')}`
 
 // #region Update logic
 
-async function updateDepsInFile(path: string, deps: DependencyJson[]) {
+async function updateDepsInFile(url: string, deps?: DependencyJson[]) {
+  if (!files.includes(url) || !deps?.length) return
+  const path = fromFileUrl(url)
+
   const file = await Deno.readFile(path)
   const text = new TextDecoder().decode(file)
   const lines = text.split('\n')
@@ -138,11 +126,14 @@ async function updateDepsInFile(path: string, deps: DependencyJson[]) {
 
     if (start !== end) {
       console.log(`Span is multiline, skipping update for ${dep.specifier} in ${path}`)
-    } else {
-      const newSpecifier = await updateSpecifier(dep.specifier)
-      const newLine = lines[start]!.slice(0, startChar) + newSpecifier + lines[start]!.slice(endChar)
-      lines[start] = newLine
+      return
     }
+
+    const newSpecifier = await updateSpecifier(dep.specifier)
+    if (newSpecifier === dep.specifier) return
+
+    const newLine = lines[start]!.slice(0, startChar) + newSpecifier + lines[start]!.slice(endChar)
+    lines[start] = newLine
   }
 
   for (const dep of deps) {
@@ -154,9 +145,12 @@ async function updateDepsInFile(path: string, deps: DependencyJson[]) {
 }
 
 async function updateSpecifier(specifier: string) {
-  const parsed = parseDependency(specifier)
-  let rangeSpecifier: string | undefined = undefined
+  if (!supportedProtocols.some((protocol) => specifier.startsWith(protocol))) return specifier
 
+  const parsed = parseDependency(specifier)
+  if (!parsed.version || excludes.includes(parsed.name)) return specifier
+
+  let rangeSpecifier: string | undefined = undefined
   if (parsed.version && /^[~^]/.test(parsed.version)) {
     rangeSpecifier = parsed.version[0]
     parsed.version = parsed.version.slice(1)
