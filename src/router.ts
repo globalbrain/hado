@@ -402,4 +402,5 @@ export function createStandardResponse(status: StatusCode, init?: ResponseInit):
  * - don't destroy whole tree on single file change
  * - use @parcel/watcher once https://github.com/denoland/deno/issues/20071 is resolved
  * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433)
+ * - store static routes in a map instead of tree for faster lookup
  */
