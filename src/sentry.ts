@@ -150,7 +150,8 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
 export function init(
   dsn: string | undefined = Deno.env.get('SENTRY_DSN'),
   environment: string | undefined = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
-): Client {
+): Client | undefined {
+  if (!dsn) return undefined
   return Sentry.init({
     dsn,
     environment,
