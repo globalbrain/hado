@@ -3,24 +3,31 @@
  *
  * @description
  * Deno server integration for Sentry.
+ *
+ * This file is not published to JSR because of restrictions on https imports.
+ * Import this file directly in your Deno server application:
+ *
+ * ```ts
+ * import { init } from 'https://raw.githubusercontent.com/globalbrain/hado/main/src/sentry.ts'
+ *
+ * init()
+ * ```
  */
 
 import {
   captureException,
   continueTrace,
   defineIntegration,
-  getSanitizedUrlString,
-  type IntegrationFn,
-  parseUrl,
   requestDataIntegration,
   SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
   SEMANTIC_ATTRIBUTE_SENTRY_SOURCE,
-  Sentry,
   setHttpStatus,
-  type SpanAttributes,
   startSpan,
   withIsolationScope,
-} from '../deps.ts'
+} from 'https://esm.sh/@sentry/core@^8.22.0'
+import * as Sentry from 'https://esm.sh/@sentry/deno@^8.22.0'
+import type { Client, IntegrationFn, SpanAttributes } from 'https://esm.sh/@sentry/types@^8.22.0'
+import { getSanitizedUrlString, parseUrl } from 'https://esm.sh/@sentry/utils@^8.22.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
@@ -143,8 +150,8 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
 export function init(
   dsn: string | undefined = Deno.env.get('SENTRY_DSN'),
   environment: string | undefined = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
-): void {
-  Sentry.init({
+): Client {
+  return Sentry.init({
     dsn,
     environment,
     integrations: [
