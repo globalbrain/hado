@@ -1,3 +1,9 @@
+## [0.6.4](https://github.com/globalbrain/hado/compare/v0.6.3...v0.6.4) (2024-08-01)
+
+### Features
+
+- add sentry module ([54911ae](https://github.com/globalbrain/hado/commit/54911ae2622b1e783cdc267b0d70f5e971b63a5e))
+
 ## [0.6.3](https://github.com/globalbrain/hado/compare/v0.6.2...v0.6.3) (2024-07-15)
 
 ## [0.6.2](https://github.com/globalbrain/hado/compare/v0.6.1...v0.6.2) (2024-07-15)
