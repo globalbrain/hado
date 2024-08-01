@@ -3,6 +3,7 @@
   "version": "0.6.3",
   "exports": {
     "./router": "./src/router.ts",
+    "./sentry": "./src/sentry.ts",
     "./utils": "./src/utils.ts"
   },
   "publish": {

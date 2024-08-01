@@ -399,5 +399,5 @@ function isPreRelease(version: string): boolean {
 
 /**
  * TODO:
- * - removed vendored code when https://github.com/hasundue/molt/issues/194 and https://github.com/hasundue/molt/issues/195 are resolved
+ * - remove vendored code when https://github.com/hasundue/molt/issues/194 and https://github.com/hasundue/molt/issues/195 are resolved
  */
