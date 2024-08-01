@@ -1,3 +1,9 @@
+## [0.7.0](https://github.com/globalbrain/hado/compare/v0.6.4...v0.7.0) (2024-08-01)
+
+### Bug Fixes
+
+- removed sentry from exports due to jsr restrictions ([74ff5b0](https://github.com/globalbrain/hado/commit/74ff5b07f7537953623c01605a25e08205f2566e))
+
 ## [0.6.4](https://github.com/globalbrain/hado/compare/v0.6.3...v0.6.4) (2024-08-01)
 
 ### Features
