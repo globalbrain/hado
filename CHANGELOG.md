@@ -1,3 +1,13 @@
+## [0.7.1](https://github.com/globalbrain/hado/compare/v0.7.0...v0.7.1) (2024-08-05)
+
+### Features
+
+- stabilize deps ([bc6dcad](https://github.com/globalbrain/hado/commit/bc6dcad2bdcafa23dda4930664352d6a4acca570))
+
+### Bug Fixes
+
+- skip sentry init if dsn is not set ([8beff85](https://github.com/globalbrain/hado/commit/8beff85e0c0a2d7aab1127c706e7e305f4a06dde))
+
 ## [0.7.0](https://github.com/globalbrain/hado/compare/v0.6.4...v0.7.0) (2024-08-01)
 
 ### Bug Fixes
