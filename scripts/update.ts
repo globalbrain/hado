@@ -8,6 +8,7 @@
 
 import {
   $,
+  as,
   assertExists,
   createGraph,
   type DependencyJson,
@@ -16,7 +17,6 @@ import {
   fromFileUrl,
   is,
   loadGraph,
-  Mutex,
   parseArgs,
   parseFromJson,
   resolve,
@@ -29,34 +29,10 @@ import {
 
 const supportedProtocols = ['npm:', 'jsr:', 'http:', 'https:'] as const
 
-class LatestVersionCache implements Disposable {
-  static #mutex = new Map<string, Mutex>()
-  static #cache = new Map<string, UpdatedDependency | null>()
-
-  constructor(readonly name: string) {
-    const mutex = LatestVersionCache.#mutex.get(name) ?? LatestVersionCache.#mutex.set(name, new Mutex()).get(name)!
-    mutex.acquire()
-  }
-
-  get(name: string): UpdatedDependency | null | undefined {
-    return LatestVersionCache.#cache.get(name)
-  }
-
-  set<T extends UpdatedDependency | null>(name: string, dependency: T): void {
-    LatestVersionCache.#cache.set(name, dependency)
-  }
-
-  [Symbol.dispose]() {
-    const mutex = LatestVersionCache.#mutex.get(this.name)
-    assertExists(mutex)
-    mutex.release()
-  }
-}
-
 const isNpmPackageMeta = is.ObjectOf({ 'dist-tags': is.ObjectOf({ latest: is.String }) })
 
 const isJsrPackageMeta = is.ObjectOf({
-  versions: is.RecordOf(is.ObjectOf({ yanked: is.OptionalOf(is.Boolean) }), is.String),
+  versions: is.RecordOf(is.ObjectOf({ yanked: as.Optional(is.Boolean) }), is.String),
 })
 
 // #endregion
@@ -155,7 +131,7 @@ async function updateSpecifier(specifier: string) {
     parsed.version = parsed.version.slice(1)
   }
 
-  const resolved = await resolveLatestVersion(parsed, { cache: true, allowPreRelease: isPreRelease(parsed.version!) })
+  const resolved = await resolveLatestVersion(parsed, { allowPreRelease: isPreRelease(parsed.version!) })
   if (!resolved) {
     console.log(`Could not resolve latest version for ${specifier}`)
     return specifier
@@ -316,21 +292,11 @@ function stringifyDependency(
  */
 async function resolveLatestVersion(
   dependency: Dependency,
-  options?: { cache?: boolean; allowPreRelease?: boolean },
+  options?: { allowPreRelease?: boolean },
 ): Promise<UpdatedDependency | undefined> {
   const constraint = dependency.version ? SemVer.tryParseRange(dependency.version) : undefined
   if (constraint && constraint.flat().length > 1) return
-  using cache = options?.cache ? new LatestVersionCache(dependency.name) : undefined
-  const cached = cache?.get(dependency.name)
-  if (cached) {
-    dependency.version === undefined
-      ? { name: cached.name, path: dependency.name.slice(cached.name.length) }
-      : { ...cached, path: dependency.path }
-  }
-  if (cached === null) return
-  const result = await _resolveLatestVersion(dependency, options)
-  cache?.set(dependency.name, result ?? null)
-  return result
+  return await _resolveLatestVersion(dependency, options)
 }
 
 async function _resolveLatestVersion(
