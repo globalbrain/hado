@@ -397,7 +397,7 @@ export function createStandardResponse(status: StatusCode, init?: ResponseInit):
  * TODO:
  * - use URLPatternList once it's available (https://github.com/whatwg/urlpattern/pull/166)
  * - use iterative pattern if there is significant memory/performance improvement
- * - use more efficient LRU cache implementation
+ * - use more efficient LRU cache implementation or Web Cache API (https://deno.com/blog/deploy-cache-api)
  * - use eager loading in production mode
  * - don't destroy whole tree on single file change
  * - use @parcel/watcher once https://github.com/denoland/deno/issues/20071 is resolved
