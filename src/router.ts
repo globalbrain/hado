@@ -280,10 +280,8 @@ export async function createRouter(
 ): Promise<{ handler: (req: Request) => Promise<Response> }> {
   let root: UrlNode
 
-  /** req.url.pathname -> { match, params } */
+  /** req.url.pathname:METHOD -> { match, params } */
   const lookupCache = new LRUCache<string, { match: string; params: Params } | null>(100)
-  /** file:METHOD -> boolean */
-  const fileHasMethodCache = new LRUCache<string, boolean>(100)
   /** file:METHOD -> handler */
   const handlerCache = new LRUCache<string, Handler | null>(100)
 
@@ -321,7 +319,10 @@ export async function createRouter(
       `${file}:${method}`,
       async () => {
         try {
-          return (await import(file))?.[method]
+          const handler: Handler | undefined = (await import(file))?.[method === 'HEAD' ? 'GET' : method]
+          if (typeof handler !== 'function') return null
+          if (method === 'HEAD') return async (...args) => new Response(null, await handler(...args))
+          return handler
         } catch {
           return null
         }
@@ -347,18 +348,8 @@ export async function createRouter(
       normalizedPath = normalizedPath.replace(urlRoot, '')
 
       const result = await lookupCache.use(
-        normalizedPath,
-        () => {
-          const fileHasMethod = (file: string) => {
-            return fileHasMethodCache.use(
-              `${file}:${req.method}`,
-              async () => !!(await getHandler(file, req.method)),
-              dev,
-            )
-          }
-
-          return root.lookup(normalizedPath, fileHasMethod)
-        },
+        `${normalizedPath}:${req.method}`,
+        () => root.lookup(normalizedPath, async (file) => !!(await getHandler(file, req.method))),
         dev,
       )
 

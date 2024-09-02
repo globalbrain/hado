@@ -80,8 +80,7 @@ export async function GET(req: Request, params: { id: string }): Promise<Respons
 
 The following methods are supported:
 
-- `GET`
-- `HEAD`
+- `GET` (corresponding `HEAD` requests are automatically handled)
 - `POST`
 - `PUT`
 - `DELETE`

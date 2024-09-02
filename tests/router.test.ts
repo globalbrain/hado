@@ -115,6 +115,23 @@ Deno.test('router', async (t) => {
       assertEquals(text, 'GET ' + expected.file + ' = ' + JSON.stringify(expected.params))
     })
   }
+
+  await t.step('Non-existent handler returns 404', async () => {
+    const res = await fetch(`http://${server.addr.hostname}:${server.addr.port}/api/`, { method: 'POST' })
+    const text = await res.text()
+
+    assertEquals(res.status, 404)
+    assertEquals(text, 'Not Found')
+  })
+
+  await t.step('HEAD is implicitly handled', async () => {
+    const res = await fetch(`http://${server.addr.hostname}:${server.addr.port}/api/`, { method: 'HEAD' })
+
+    assertEquals(res.status, 200)
+    assertEquals(res.headers.get('content-type'), 'text/plain;charset=UTF-8')
+    assertEquals(res.headers.get('content-length'), null)
+    assertEquals(res.headers.get('content-encoding'), null)
+  })
 })
 
 // TODO: maybe use @std/testing/bdd and @std/expect for more familiar API
