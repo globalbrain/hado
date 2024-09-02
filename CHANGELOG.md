@@ -1,3 +1,13 @@
+## [0.7.2](https://github.com/globalbrain/hado/compare/v0.7.1...v0.7.2) (2024-09-02)
+
+### Features
+
+- HEAD is now implicitly handled if GET is defined ([abef902](https://github.com/globalbrain/hado/commit/abef90270d17b75adc147f97b3b82849bce2b903))
+
+### Bug Fixes
+
+- cache logic resulting in internal server errors ([abef902](https://github.com/globalbrain/hado/commit/abef90270d17b75adc147f97b3b82849bce2b903))
+
 ## [0.7.1](https://github.com/globalbrain/hado/compare/v0.7.0...v0.7.1) (2024-08-05)
 
 ### Features
