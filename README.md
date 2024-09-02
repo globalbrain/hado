@@ -35,7 +35,7 @@ DENO_ENV=development deno run --watch --allow-env --allow-read --allow-net serve
 
 This will restart the server on file changes and will watch for changes in the `api` directory.
 
-You can also use the `--unstable-hmr` flag instead of `--watch` to enable hot module reloading.
+You can also use the `--watch-hmr` flag instead of `--watch` to enable hot module reloading.
 
 ## Routing
 
