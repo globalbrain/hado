@@ -10,7 +10,7 @@
  *
  * - next - MIT License
  *     Copyright (c) 2024 Vercel, Inc.
- *     https://github.com/vercel/next.js/blob/canary/license.md
+ *     https://github.com/vercel/next.js/blob/main/license.md
  *     Relevant files:
  *       https://github.com/vercel/next.js/blob/efcec4c1e303848a5293cef6961be8f73fd5160b/packages/next/src/shared/lib/router/utils/sorted-routes.ts
  *
