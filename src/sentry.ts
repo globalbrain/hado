@@ -8,7 +8,7 @@
  * Import this file directly in your Deno server application:
  *
  * ```ts
- * import { init } from 'https://raw.githubusercontent.com/globalbrain/hado/main/src/sentry.ts'
+ * import { init } from 'https://raw.githubusercontent.com/globalbrain/hado/v<version>/src/sentry.ts'
  *
  * init()
  * ```
