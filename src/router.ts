@@ -392,6 +392,6 @@ export function createStandardResponse(status: StatusCode, init?: ResponseInit):
  * - use eager loading in production mode
  * - don't destroy whole tree on single file change
  * - use @parcel/watcher once https://github.com/denoland/deno/issues/20071 is resolved / update chokidar to v4
- * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433)
+ * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433), add services docs
  * - store static routes in a map instead of tree for faster lookup
  */
