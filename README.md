@@ -90,9 +90,9 @@ Methods other than these will be ignored and a 405 status code will be returned.
 
 There is a hard-limit of 8 KiB on the request URL. URLs longer than this will be rejected with a 414 status code.
 
-Catch-all routes are also supported. Refer [Next.js documentation](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes) for more information.
+[Catch-all routes](https://nextjs.org/docs/pages/building-your-application/routing/dynamic-routes) and [route groups](https://nextjs.org/docs/app/building-your-application/routing/route-groups) are also supported. Refer respective Next.js docs for more details.
 
-Here `Request` and `Response` are Deno's built-in request and response objects - documented [here](https://docs.deno.com/deploy/api/runtime-request) and [here](https://docs.deno.com/deploy/api/runtime-response).
+Here, `Request` and `Response` are Deno's built-in [request](https://docs.deno.com/deploy/api/runtime-request/) and [response](https://docs.deno.com/deploy/api/runtime-response/) objects.
 
 Also, note that the API routes will take precedence over static files. It is recommended to specify non-conflicting URL roots for API and static routes.
 
