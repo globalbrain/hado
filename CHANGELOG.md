@@ -1,3 +1,9 @@
+## [0.7.3](https://github.com/globalbrain/hado/compare/v0.7.2...v0.7.3) (2024-10-28)
+
+### Features
+
+- support route groups, bump deps to stable, use deno 2 ([dec4018](https://github.com/globalbrain/hado/commit/dec4018acd94060a04ecb7462b041d0af4ed2ff4))
+
 ## [0.7.2](https://github.com/globalbrain/hado/compare/v0.7.1...v0.7.2) (2024-09-02)
 
 ### Features
