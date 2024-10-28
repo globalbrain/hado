@@ -88,6 +88,9 @@ class LRUCache<K, V> {
 class UrlNode {
   readonly children: Map<string, UrlNode> = new Map()
 
+  static #cwd = Deno.cwd()
+  static #sep = Deno.build.os === 'windows' ? '\\' : '/'
+
   placeholder: boolean = true
   slugName: string | null = null
   restSlugName: string | null = null
@@ -97,11 +100,20 @@ class UrlNode {
   // #region Insert
 
   insert(urlPath: string, data: string): void {
-    this.#insert(urlPath.split('/').filter(Boolean), 0, [], false, data)
+    const segments = urlPath.split('/').filter((segment) =>
+      segment && !(segment.startsWith('(') && segment.endsWith(')'))
+    )
+    this.#insert(segments, 0, [], false, data)
   }
 
   #insert(urlPaths: string[], index: number, slugNames: string[], isCatchAll: boolean, data: string): void {
     if (index === urlPaths.length) {
+      if (this.data !== null) {
+        throw new Error(
+          `You cannot have two parallel pages that resolve to the same path. Please check ` +
+            `${UrlNode.#userFriendlyPath(this.data)} and ${UrlNode.#userFriendlyPath(data)}.`,
+        )
+      }
       this.placeholder = false
       this.data = data
       return
@@ -254,6 +266,10 @@ class UrlNode {
   }
 
   // #endregion
+
+  static #userFriendlyPath(fileUrl: string) {
+    return fileUrl.slice(8 + UrlNode.#cwd.length).replace(/\//g, UrlNode.#sep)
+  }
 }
 
 /**

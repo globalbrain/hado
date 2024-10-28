@@ -8,18 +8,18 @@ export {
   type InputOptions,
   Select,
   type SelectOptions,
-} from 'jsr:@cliffy/prompt@^1.0.0-rc.5'
+} from 'jsr:@cliffy/prompt@^1.0.0-rc.7'
 export { as, ensure, is } from 'jsr:@core/unknownutil@^4.3.0'
-export { createGraph, load as loadGraph } from 'jsr:@deno/graph@^0.82.1'
-export type { DependencyJson, ResolvedDependency } from 'jsr:@deno/graph@^0.82.1/types'
-export { assertEquals, assertExists } from 'jsr:@std/assert@^1.0.5'
+export { createGraph, load as loadGraph } from 'jsr:@deno/graph@^0.83.4'
+export type { DependencyJson, ResolvedDependency } from 'jsr:@deno/graph@^0.83.4/types'
+export { assertEquals, assertExists } from 'jsr:@std/assert@^1.0.6'
 export { parseArgs } from 'jsr:@std/cli@^1.0.6'
 export { Spinner } from 'jsr:@std/cli@^1.0.6/unstable-spinner'
-export { filterEntries } from 'jsr:@std/collections@^1.0.6'
-export { bold, cyan, dim, green, magenta } from 'jsr:@std/fmt@^1.0.2/colors'
-export { expandGlob } from 'jsr:@std/fs@^1.0.3'
+export { filterEntries } from 'jsr:@std/collections@^1.0.9'
+export { bold, cyan, dim, green, magenta } from 'jsr:@std/fmt@^1.0.3/colors'
+export { expandGlob } from 'jsr:@std/fs@^1.0.5'
 export { getAvailablePort } from 'jsr:@std/net@^1.0.4/get-available-port'
-export { dirname, fromFileUrl, relative, resolve, toFileUrl } from 'jsr:@std/path@^1.0.6'
+export { dirname, fromFileUrl, relative, resolve, toFileUrl } from 'jsr:@std/path@^1.0.7'
 export { escape } from 'jsr:@std/regexp@^1.0.0'
 export * as SemVer from 'jsr:@std/semver@^1.0.3'
 
