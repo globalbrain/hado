@@ -1,3 +1,13 @@
+## [0.8.0](https://github.com/globalbrain/hado/compare/v0.7.3...v0.8.0) (2024-11-10)
+
+### ⚠ BREAKING CHANGES
+
+- `static.fsRoot` is now required to serve static files. This is a breaking change because previously static files were served from the project root by default, which posed a security risk of exposing sensitive files.
+
+### Bug Fixes
+
+- don't serve static files unless static.fsRoot is explicitly specified ([ba49813](https://github.com/globalbrain/hado/commit/ba49813972bad21e1774fed65c26bdc8b76ff85d))
+
 ## [0.7.3](https://github.com/globalbrain/hado/compare/v0.7.2...v0.7.3) (2024-10-28)
 
 ### Features
