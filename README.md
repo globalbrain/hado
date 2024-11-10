@@ -30,7 +30,7 @@ This will serve the `api` directory as an API on `http://localhost:3000/api`.
 To run the server in development mode, you can use the following command:
 
 ```sh
-DENO_ENV=development deno run --watch --allow-env --allow-read --allow-net server.ts
+DENO_ENV=development deno run --watch --allow-env --allow-ffi --allow-read --allow-net server.ts
 ```
 
 This will restart the server on file changes and will watch for changes in the `api` directory.
@@ -95,6 +95,10 @@ There is a hard-limit of 8 KiB on the request URL. URLs longer than this will be
 Here, `Request` and `Response` are Deno's built-in [request](https://docs.deno.com/deploy/api/runtime-request/) and [response](https://docs.deno.com/deploy/api/runtime-response/) objects.
 
 Also, note that the API routes will take precedence over static files. It is recommended to specify non-conflicting URL roots for API and static routes.
+
+## Security Considerations
+
+- Do not set `static.fsRoot` to a directory that contains sensitive files. The server will serve any file in that directory including dotfiles.
 
 ## Contributing
 

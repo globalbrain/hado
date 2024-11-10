@@ -290,7 +290,7 @@ export async function createRouter(
   { fsRoot, urlRoot = '', static: statik, dev = false }: {
     fsRoot: string
     urlRoot?: string
-    static?: ServeDirOptions
+    static?: ServeDirOptions & { fsRoot: string }
     dev?: boolean
   },
 ): Promise<{ handler: (req: Request) => Promise<Response> }> {
@@ -374,7 +374,7 @@ export async function createRouter(
       }
     }
 
-    if (statik) {
+    if (statik?.fsRoot) {
       return serveDir(req, { quiet: true, ...statik })
     }
 

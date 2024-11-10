@@ -65,11 +65,11 @@ const oldVersion = SemVer.parse(denoJson.version)
 const defaultTheme = { prefix: green('? '), listPointer: cyan('❯'), pointer: cyan('›') }
 
 class Confirm extends _Confirm {
-  public getDefaultSettings(options: ConfirmOptions) {
+  public override getDefaultSettings(options: ConfirmOptions) {
     return { ...super.getDefaultSettings(options), active: 'yes', inactive: 'no', default: true, ...defaultTheme }
   }
 
-  protected addChar(char: string): void {
+  protected override addChar(char: string): void {
     if (char.toLowerCase() === 'y') {
       this.inputValue = 'yes'
       this.submit()
@@ -81,11 +81,11 @@ class Confirm extends _Confirm {
 }
 
 class Select extends _Select<string> {
-  public getDefaultSettings(options: SelectOptions<string>) {
+  public override getDefaultSettings(options: SelectOptions<string>) {
     return { ...super.getDefaultSettings(options), ...defaultTheme }
   }
 
-  protected highlight(name: string | number): string {
+  protected override highlight(name: string | number): string {
     const isCurrent = name === this.options[this.listIndex]?.name
 
     name = name + ''
@@ -123,7 +123,7 @@ class Select extends _Select<string> {
 }
 
 class Input extends _Input {
-  public getDefaultSettings(options: InputOptions) {
+  public override getDefaultSettings(options: InputOptions) {
     return { ...super.getDefaultSettings(options), ...defaultTheme }
   }
 }

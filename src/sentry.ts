@@ -24,10 +24,10 @@ import {
   setHttpStatus,
   startSpan,
   withIsolationScope,
-} from 'https://esm.sh/@sentry/core@^8.35.0'
-import * as Sentry from 'https://esm.sh/@sentry/deno@^8.35.0'
-import type { Client, IntegrationFn, SpanAttributes } from 'https://esm.sh/@sentry/types@^8.35.0'
-import { getSanitizedUrlString, parseUrl } from 'https://esm.sh/@sentry/utils@^8.35.0'
+} from 'https://esm.sh/@sentry/core@^8.37.1'
+import * as Sentry from 'https://esm.sh/@sentry/deno@^8.37.1'
+import type { Client, IntegrationFn, SpanAttributes } from 'https://esm.sh/@sentry/types@^8.37.1'
+import { getSanitizedUrlString, parseUrl } from 'https://esm.sh/@sentry/utils@^8.37.1'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
