@@ -29,7 +29,7 @@
     "type": "deno check **/*.ts",
     "check": "deno task format:fail && deno task lint:fail && deno task type && deno task test",
     "release": "deno run -A ./scripts/release.ts",
-    "update": "deno run -A ./scripts/update.ts"
+    "update": "deno run -A ./scripts/update.ts -x chokidar && deno task check"
   },
   "fmt": {
     "lineWidth": 120,
