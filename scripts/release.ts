@@ -300,15 +300,18 @@ await step('Pushing to GitHub...', async () => {
 })
 
 await step('Creating a new release...', async () => {
-  const changelog = await Deno.readTextFile('CHANGELOG.md')
+  const rawRepoUrl = await $`git remote get-url origin`.text()
+  const repoUrl = 'https://' + rawRepoUrl
+    .replace(/^.*(?:\:\/\/|@)/, '').replace(/(?:\.git|#).*$/, '').replace(/:\/?/, '/')
 
+  const changelog = await Deno.readTextFile('CHANGELOG.md')
   const match = changelog.match(new RegExp(`## \\[${escape(newVersion)}\\]\\((.*?)\\).*?\n([\\s\\S]*?)(?=\n## |$)`))
 
   const url = newGithubReleaseUrl({
     body: `${match?.[2]?.trim() ?? ''}\n\n**Full Changelog**: ${match?.[1]?.trim() ?? ''}`,
     isPrerelease: (SemVer.parse(newVersion).prerelease?.length ?? 0) > 0,
-    repoUrl: 'https://github.com/globalbrain/hado',
     tag: `v${newVersion}`,
+    repoUrl,
   })
 
   await open(url)
