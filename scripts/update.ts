@@ -79,7 +79,8 @@ try {
   }
 }
 
-await $`deno cache --reload --lock=deno.lock ${files.map((name) => $.escapeArg(name)).join(' ')}`
+await $`deno install --lock=deno.lock -e ${files.map((name) => $.escapeArg(name)).join(' ')}`
+await $`deno install` // install deps in deno.json/package.json
 
 // #region Update logic
 
