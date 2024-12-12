@@ -161,6 +161,7 @@ export function init(
       denoServerIntegration(),
       Sentry.captureConsoleIntegration({ levels: ['warn', 'error'] }),
     ],
+    ignoreErrors: [/^Listening on/],
   })
 }
 
