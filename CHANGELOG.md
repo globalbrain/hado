@@ -1,3 +1,9 @@
+## [0.8.2](https://github.com/globalbrain/hado/compare/v0.8.1...v0.8.2) (2024-12-12)
+
+### Bug Fixes
+
+- **sentry:** don't treat "listening on ..." logs as errors ([ede66d4](https://github.com/globalbrain/hado/commit/ede66d4b02f94cf6acf19f3d819e67c07ed32400))
+
 ## [0.8.1](https://github.com/globalbrain/hado/compare/v0.8.0...v0.8.1) (2024-11-28)
 
 ## [0.8.0](https://github.com/globalbrain/hado/compare/v0.7.3...v0.8.0) (2024-11-10)
