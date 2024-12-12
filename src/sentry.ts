@@ -16,19 +16,21 @@
 
 import {
   captureException,
+  type Client,
   continueTrace,
   defineIntegration,
   getSanitizedUrlString,
+  type IntegrationFn,
   parseUrl,
   requestDataIntegration,
   SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
   SEMANTIC_ATTRIBUTE_SENTRY_SOURCE,
   setHttpStatus,
+  type SpanAttributes,
   startSpan,
   withIsolationScope,
-} from 'https://esm.sh/@sentry/core@^8.41.0'
-import * as Sentry from 'https://esm.sh/@sentry/deno@^8.41.0'
-import type { Client, IntegrationFn, SpanAttributes } from 'https://esm.sh/@sentry/types@^8.41.0'
+} from 'https://esm.sh/@sentry/core@^8.43.0'
+import * as Sentry from 'https://esm.sh/@sentry/deno@^8.43.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
