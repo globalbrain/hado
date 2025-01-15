@@ -1,11 +1,10 @@
 /**
  * Credits:
  *
- * - np, new-github-release-url, is-in-ci - MIT License
+ * - np, new-github-release-url - MIT License
  *     Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
  *     https://github.com/sindresorhus/np/blob/main/license
  *     https://github.com/sindresorhus/new-github-release-url/blob/main/license
- *     https://github.com/sindresorhus/is-in-ci/blob/main/license
  *
  * - bumpp, version-bump-prompt - MIT License
  *     Copyright (c) 2022 Anthony Fu
@@ -15,10 +14,6 @@
  *
  * - opener - UNLICENSED
  *     https://deno.land/x/opener@v1.0.1
- *
- * - vitepress - MIT License
- *     Copyright (c) 2019-present, Yuxi (Evan) You
- *     https://github.com/vuejs/vitepress/blob/main/LICENSE
  */
 
 // #region Imports
@@ -132,12 +127,6 @@ class Input extends _Input {
 
 // #region Step
 
-const env = Deno.env.toObject()
-
-const isEnabled = Deno.stdout.isTerminal() &&
-  !(env.CI !== '0' && env.CI !== 'false' &&
-    ('CI' in env || 'CONTINUOUS_INTEGRATION' in env || Object.keys(env).some((key) => key.startsWith('CI_'))))
-
 const okMark = '\x1b[32m✓\x1b[0m'
 const failMark = '\x1b[31m✗\x1b[0m'
 
@@ -146,17 +135,11 @@ const failMark = '\x1b[31m✗\x1b[0m'
  *
  * @example
  * ```ts
- * await step('Loading...', async () => {})
+ * await step('Loading', async () => {})
  * ```
  */
 async function step(text: string, fn: () => Promise<void>): Promise<void> {
-  if (!isEnabled) {
-    console.log(text)
-    await fn()
-    return
-  }
-
-  text = bold(text)
+  text = bold(text + '...')
 
   const spinner = new Spinner({ message: text, color: 'cyan' })
   spinner.start()
@@ -275,31 +258,31 @@ const newVersion = SemVer.format(isReleaseType(version) ? SemVer.increment(oldVe
 
 if (!(await Confirm.prompt({ message: `Bump ${dim(`(${denoJson.version} → ${newVersion})`)}?` }))) Deno.exit()
 
-await step('Updating version in deno.json...', async () => {
+await step('Updating version in deno.json', async () => {
   denoJson.version = newVersion
   await Deno.writeTextFile('deno.json', JSON.stringify(denoJson, null, 2))
   await $`deno fmt deno.json`
 })
 
-await step('Generating changelog...', async () => {
+await step('Generating changelog', async () => {
   await $`deno run -A --no-lock npm:conventional-changelog-cli -i CHANGELOG.md -s -p conventionalcommits -k deno.json`
   await $`deno fmt CHANGELOG.md`
 })
 
 if (!(await Confirm.prompt({ message: 'Changelog generated. Does it look good?' }))) Deno.exit()
 
-await step('Committing changes...', async () => {
+await step('Committing changes', async () => {
   await $`git add deno.json CHANGELOG.md`
   await $`git commit -m "release: v${newVersion}"`
   await $`git tag v${newVersion}`
 })
 
-await step('Pushing to GitHub...', async () => {
+await step('Pushing to GitHub', async () => {
   await $`git push origin refs/tags/v${newVersion}`
   await $`git push`
 })
 
-await step('Creating a new release...', async () => {
+await step('Creating a new release', async () => {
   const rawRepoUrl = await $`git remote get-url origin`.text()
   const repoUrl = 'https://' + rawRepoUrl
     .replace(/^.*(?:\:\/\/|@)/, '').replace(/(?:\.git|#).*$/, '').replace(/:\/?/, '/')

@@ -29,8 +29,8 @@ import {
   type SpanAttributes,
   startSpan,
   withIsolationScope,
-} from 'https://esm.sh/@sentry/core@^8.43.0'
-import * as Sentry from 'https://esm.sh/@sentry/deno@^8.43.0'
+} from 'https://esm.sh/@sentry/core@^8.49.0'
+import * as Sentry from 'https://esm.sh/@sentry/deno@^8.49.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
@@ -58,11 +58,9 @@ export function instrumentDenoServe(): void {
     apply(serveTarget, serveThisArg, serveArgs: unknown[]) {
       const [arg1, arg2] = serveArgs
 
-      if (typeof arg1 === 'function') {
-        serveArgs[0] = instrumentDenoServeOptions(arg1 as RawHandler)
-      } else if (typeof arg2 === 'function') {
-        serveArgs[1] = instrumentDenoServeOptions(arg2 as RawHandler)
-      } else if (arg1 && typeof arg1 === 'object' && 'handler' in arg1 && typeof arg1.handler === 'function') {
+      if (typeof arg1 === 'function') serveArgs[0] = instrumentDenoServeOptions(arg1 as RawHandler)
+      else if (typeof arg2 === 'function') serveArgs[1] = instrumentDenoServeOptions(arg2 as RawHandler)
+      else if (arg1 && typeof arg1 === 'object' && 'handler' in arg1 && typeof arg1.handler === 'function') {
         arg1.handler = instrumentDenoServeOptions(arg1.handler as RawHandler)
       }
 
@@ -98,22 +96,14 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
         const url = getSanitizedUrlString(parsedUrl)
 
         isolationScope.setSDKProcessingMetadata({
-          request: {
-            url,
-            method: request.method,
-            headers: Object.fromEntries(request.headers),
-          },
+          request: { url, method: request.method, headers: Object.fromEntries(request.headers) },
         })
 
         return continueTrace(
           { sentryTrace: request.headers.get('sentry-trace') || '', baggage: request.headers.get('baggage') },
           () => {
             return startSpan(
-              {
-                attributes,
-                op: 'http.server',
-                name: `${request.method} ${parsedUrl.path || '/'}`,
-              },
+              { attributes, op: 'http.server', name: `${request.method} ${parsedUrl.path || '/'}` },
               async (span) => {
                 try {
                   const response = await (handlerTarget.apply(handlerThisArg, handlerArgs) as ReturnType<RawHandler>)
@@ -126,15 +116,7 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
                   }
                   return response
                 } catch (e) {
-                  captureException(e, {
-                    mechanism: {
-                      type: 'deno',
-                      handled: false,
-                      data: {
-                        function: 'serve',
-                      },
-                    },
-                  })
+                  captureException(e, { mechanism: { type: 'deno', handled: false, data: { function: 'serve' } } })
                   throw e
                 }
               },

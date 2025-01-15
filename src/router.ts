@@ -119,9 +119,7 @@ class UrlNode {
       return
     }
 
-    if (isCatchAll) {
-      throw new Error('Catch-all must be the last part of the URL.')
-    }
+    if (isCatchAll) throw new Error('Catch-all must be the last part of the URL.')
 
     let nextSegment = urlPaths[index]!
     let segmentName = ''
@@ -177,9 +175,7 @@ class UrlNode {
           nextSegment = '[...]'
         }
       } else {
-        if (isOptional) {
-          throw new Error(`Optional route parameters are not yet supported ('${nextSegment}').`)
-        }
+        if (isOptional) throw new Error(`Optional route parameters are not yet supported ('${nextSegment}').`)
 
         handleSlug(this.slugName, segmentName)
         this.slugName = segmentName
@@ -187,9 +183,7 @@ class UrlNode {
       }
     }
 
-    if (!this.children.has(nextSegment)) {
-      this.children.set(nextSegment, new UrlNode())
-    }
+    if (!this.children.has(nextSegment)) this.children.set(nextSegment, new UrlNode())
 
     this.children.get(nextSegment)!.#insert(urlPaths, index + 1, slugNames, isCatchAll, data)
   }
@@ -216,9 +210,7 @@ class UrlNode {
         if (this.optionalRestSlugName !== null) {
           throw new Error('You cannot define a route with the same specificity as an optional catch-all route.')
         }
-        if (this.data && (await validate(this.data))) {
-          return { match: this.data, params }
-        }
+        if (this.data && (await validate(this.data))) return { match: this.data, params }
       }
 
       if (this.optionalRestSlugName !== null) {
@@ -369,14 +361,10 @@ export async function createRouter(
         dev,
       )
 
-      if (result !== null) {
-        return (await getHandler(result.match, req.method))!(req, result.params)
-      }
+      if (result !== null) return (await getHandler(result.match, req.method))!(req, result.params)
     }
 
-    if (statik?.fsRoot) {
-      return serveDir(req, { quiet: true, ...statik })
-    }
+    if (statik?.fsRoot) return serveDir(req, { quiet: true, ...statik })
 
     return createStandardResponse(STATUS_CODE.NotFound)
   }

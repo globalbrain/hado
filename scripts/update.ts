@@ -72,11 +72,7 @@ await Promise.all(graph.modules.map((mod) => updateDepsInFile(mod.specifier, mod
 try {
   await Deno.remove('deno.lock')
 } catch (e) {
-  if (e instanceof Deno.errors.NotFound) {
-    // ignore
-  } else {
-    console.error(e)
-  }
+  if (!(e instanceof Deno.errors.NotFound)) console.error(e)
 }
 
 await $`deno install --lock=deno.lock -e ${files.map((name) => $.escapeArg(name)).join(' ')}`
