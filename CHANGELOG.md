@@ -1,3 +1,9 @@
+## [0.8.5](https://github.com/globalbrain/hado/compare/v0.8.4...v0.8.5) (2025-01-16)
+
+### Features
+
+- **sentry:** console integration for npm packages ([8fa09c2](https://github.com/globalbrain/hado/commit/8fa09c2f986a9d404a478e8293b205c8b7ef50f7))
+
 ## [0.8.4](https://github.com/globalbrain/hado/compare/v0.8.3...v0.8.4) (2025-01-15)
 
 ## [0.8.3](https://github.com/globalbrain/hado/compare/v0.8.2...v0.8.3) (2024-12-12)
