@@ -22,6 +22,7 @@ export { getAvailablePort } from 'jsr:@std/net@^1.0.4/get-available-port'
 export { dirname, fromFileUrl, relative, resolve, toFileUrl } from 'jsr:@std/path@^1.0.8'
 export { escape } from 'jsr:@std/regexp@^1.0.1'
 export * as SemVer from 'jsr:@std/semver@^1.0.3'
+export { minify } from 'npm:terser@^5.37.0'
 
 export const $ = new Proxy(_$, {
   apply(target, thisArg, args: Parameters<$Type>) {

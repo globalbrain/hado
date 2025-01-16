@@ -14,41 +14,36 @@
  * ```
  */
 
+import type { Client, IntegrationFn, SpanAttributes } from 'https://esm.sh/@sentry/core'
+// @deno-types="https://esm.sh/@sentry/deno"
 import {
+  captureConsoleIntegration,
   captureException,
-  type Client,
   continueTrace,
-  defineIntegration,
-  getSanitizedUrlString,
-  type IntegrationFn,
-  parseUrl,
+  init as sentryInit,
   requestDataIntegration,
   SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
   SEMANTIC_ATTRIBUTE_SENTRY_SOURCE,
   setHttpStatus,
-  type SpanAttributes,
   startSpan,
   withIsolationScope,
-} from 'https://esm.sh/@sentry/core@^8.49.0'
-import * as Sentry from 'https://esm.sh/@sentry/deno@^8.49.0'
+} from '../vendor/sentry/index.mjs'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
 const INTEGRATION_NAME = 'DenoServer'
 
-const _denoServerIntegration = (() => {
+/**
+ * Instruments `Deno.serve` to automatically create transactions and capture errors.
+ */
+export const denoServerIntegration: IntegrationFn = () => {
   return {
     name: INTEGRATION_NAME,
     setupOnce() {
       instrumentDenoServe()
     },
   }
-}) satisfies IntegrationFn
-
-/**
- * Instruments `Deno.serve` to automatically create transactions and capture errors.
- */
-export const denoServerIntegration: IntegrationFn = defineIntegration(_denoServerIntegration)
+}
 
 /**
  * Instruments Deno.serve by patching it's options.
@@ -83,7 +78,7 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
           return handlerTarget.apply(handlerThisArg, handlerArgs)
         }
 
-        const parsedUrl = parseUrl(request.url)
+        const parsedUrl = new URL(request.url)
         const attributes: SpanAttributes = {
           [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: 'auto.http.deno.serve',
           'http.request.method': request.method || 'GET',
@@ -93,7 +88,7 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
           attributes['http.query'] = parsedUrl.search
         }
 
-        const url = getSanitizedUrlString(parsedUrl)
+        const url = `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}`
 
         isolationScope.setSDKProcessingMetadata({
           request: { url, method: request.method, headers: Object.fromEntries(request.headers) },
@@ -103,7 +98,7 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
           { sentryTrace: request.headers.get('sentry-trace') || '', baggage: request.headers.get('baggage') },
           () => {
             return startSpan(
-              { attributes, op: 'http.server', name: `${request.method} ${parsedUrl.path || '/'}` },
+              { attributes, op: 'http.server', name: `${request.method} ${parsedUrl.pathname || '/'}` },
               async (span) => {
                 try {
                   const response = await (handlerTarget.apply(handlerThisArg, handlerArgs) as ReturnType<RawHandler>)
@@ -137,13 +132,13 @@ export function init(
   environment: string | undefined = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
 ): Client | undefined {
   if (!dsn) return undefined
-  return Sentry.init({
+  return sentryInit({
     dsn,
     environment,
     integrations: [
       requestDataIntegration(),
       denoServerIntegration(),
-      Sentry.captureConsoleIntegration({ levels: ['warn', 'error'] }),
+      captureConsoleIntegration({ levels: ['warn', 'error'] }),
     ],
     ignoreErrors: [/^Listening on/],
   })

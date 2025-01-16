@@ -29,13 +29,22 @@
     "type": "deno check **/*.ts",
     "check": "deno task format:fail && deno task lint:fail && deno task type && deno task test",
     "release": "deno run -A ./scripts/release.ts",
-    "update": "deno run -A ./scripts/update.ts -x chokidar && deno task check"
+    "vendor": "deno run -A ./scripts/vendor.ts",
+    "update": "deno task vendor && deno run -A ./scripts/update.ts -x chokidar && deno task check"
   },
   "fmt": {
     "lineWidth": 120,
     "proseWrap": "preserve",
     "semiColons": false,
-    "singleQuote": true
+    "singleQuote": true,
+    "exclude": [
+      "vendor"
+    ]
+  },
+  "lint": {
+    "exclude": [
+      "vendor"
+    ]
   },
   "imports": {}
 }
