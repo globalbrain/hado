@@ -14,8 +14,8 @@
  * ```
  */
 
-import type { Client, IntegrationFn, SpanAttributes } from 'https://esm.sh/@sentry/core'
-// @deno-types="https://esm.sh/@sentry/deno"
+import type { Client, IntegrationFn, RequestEventData, SpanAttributes } from 'https://esm.sh/@sentry/core@9.2.0'
+// @deno-types="https://esm.sh/@sentry/deno@9.2.0"
 import {
   captureConsoleIntegration,
   captureException,
@@ -30,6 +30,10 @@ import {
 } from '../vendor/sentry/index.mjs'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
+
+const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
+const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
+const SEMANTIC_ATTRIBUTE_SENTRY_OP = 'sentry.op'
 
 const INTEGRATION_NAME = 'DenoServer'
 
@@ -53,9 +57,16 @@ export function instrumentDenoServe(): void {
     apply(serveTarget, serveThisArg, serveArgs: unknown[]) {
       const [arg1, arg2] = serveArgs
 
-      if (typeof arg1 === 'function') serveArgs[0] = instrumentDenoServeOptions(arg1 as RawHandler)
-      else if (typeof arg2 === 'function') serveArgs[1] = instrumentDenoServeOptions(arg2 as RawHandler)
-      else if (arg1 && typeof arg1 === 'object' && 'handler' in arg1 && typeof arg1.handler === 'function') {
+      if (typeof arg1 === 'function') {
+        serveArgs[0] = instrumentDenoServeOptions(arg1 as RawHandler)
+      } else if (typeof arg2 === 'function') {
+        serveArgs[1] = instrumentDenoServeOptions(arg2 as RawHandler)
+      } else if (
+        arg1 &&
+        typeof arg1 === 'object' &&
+        'handler' in arg1 &&
+        typeof arg1.handler === 'function'
+      ) {
         arg1.handler = instrumentDenoServeOptions(arg1.handler as RawHandler)
       }
 
@@ -81,37 +92,56 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
         const parsedUrl = new URL(request.url)
         const attributes: SpanAttributes = {
           [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: 'auto.http.deno.serve',
-          'http.request.method': request.method || 'GET',
           [SEMANTIC_ATTRIBUTE_SENTRY_SOURCE]: 'url',
-        }
-        if (parsedUrl.search) {
-          attributes['http.query'] = parsedUrl.search
+          [SEMANTIC_ATTRIBUTE_SENTRY_OP]: 'http.server',
+          [SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD]: request.method,
+          [SEMANTIC_ATTRIBUTE_URL_FULL]: request.url,
         }
 
         const url = `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}`
 
         isolationScope.setSDKProcessingMetadata({
-          request: { url, method: request.method, headers: Object.fromEntries(request.headers) },
+          normalizedRequest: {
+            url,
+            method: request.method,
+            headers: Object.fromEntries(request.headers),
+            query_string: parsedUrl.search.slice(1) || undefined,
+          } satisfies RequestEventData,
         })
 
         return continueTrace(
-          { sentryTrace: request.headers.get('sentry-trace') || '', baggage: request.headers.get('baggage') },
+          {
+            sentryTrace: request.headers.get('sentry-trace') || '',
+            baggage: request.headers.get('baggage'),
+          },
           () => {
             return startSpan(
-              { attributes, op: 'http.server', name: `${request.method} ${parsedUrl.pathname || '/'}` },
+              {
+                attributes,
+                op: 'http.server',
+                name: `${request.method} ${parsedUrl.pathname || '/'}`,
+              },
               async (span) => {
                 try {
-                  const response = await (handlerTarget.apply(handlerThisArg, handlerArgs) as ReturnType<RawHandler>)
-                  if (response && response.status) {
+                  const response = await (handlerTarget.apply(
+                    handlerThisArg,
+                    handlerArgs,
+                  ) as ReturnType<RawHandler>)
+
+                  if (response?.status) {
                     setHttpStatus(span, response.status)
                     isolationScope.setContext('response', {
                       headers: Object.fromEntries(response.headers),
                       status_code: response.status,
                     })
                   }
+
                   return response
                 } catch (e) {
-                  captureException(e, { mechanism: { type: 'deno', handled: false, data: { function: 'serve' } } })
+                  captureException(e, {
+                    mechanism: { type: 'deno', handled: false, data: { function: 'serve' } },
+                  })
+
                   throw e
                 }
               },
