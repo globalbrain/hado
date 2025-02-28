@@ -8,12 +8,17 @@ try {
 
 await Deno.mkdir('vendor/sentry', { recursive: true })
 
+const sentryVersion = (await Deno.readTextFile('src/sentry.ts')).match(/@sentry\/deno@(\d+\.\d+\.\d+)/)?.[1]
+if (!sentryVersion) throw new Error('Failed to find sentry version')
+
 const importMap = {
   imports: {
-    '@sentry/core': 'https://unpkg.com/@sentry/core@9.2.0/build/esm/index.js',
-    '@sentry/deno': 'https://unpkg.com/@sentry/deno@9.2.0/build/esm/index.js',
+    '@sentry/core': `https://unpkg.com/@sentry/core@${sentryVersion}/build/esm/index.js`,
+    '@sentry/deno': `https://unpkg.com/@sentry/deno@${sentryVersion}/build/esm/index.js`,
   },
 }
+
+let patched = false
 
 await build({
   plugins: [
@@ -66,7 +71,9 @@ function fill(source, name, replacementFactory) {
   }
 }`,
           )
-          if (modified === original) throw new Error('Failed to patch sentry')
+
+          patched = true
+
           return {
             contents: `import { patchGlobal } from 'npm:@brc-dd/globals@^0.1.0';${modified}`,
           }
@@ -86,3 +93,7 @@ function fill(source, name, replacementFactory) {
   external: ['npm:@brc-dd/globals@*'],
   entryPoints: ['@sentry/deno'],
 })
+
+if (!patched) {
+  throw new Error('Failed to patch sentry')
+}

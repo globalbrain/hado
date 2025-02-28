@@ -415,9 +415,9 @@
     "https://deno.land/x/import_map@v0.21.0/mod.ts": "b074650942b9cca0bd1a5a2c354338f844f93b0ae01de10a14718415d7f370f7",
     "https://deno.land/x/wasmbuild@0.15.1/cache.ts": "9d01b5cb24e7f2a942bbd8d14b093751fa690a6cde8e21709ddc97667e6669ed",
     "https://deno.land/x/wasmbuild@0.15.1/loader.ts": "8c2fc10e21678e42f84c5135d8ab6ab7dc92424c3f05d2354896a29ccfd02a63",
-    "https://esm.sh/@sentry/core@9.2.0": "294a5f33e62acdba89242661ea14a2890fba4438cb65d16efb1df1ff4dcc4ffd",
-    "https://esm.sh/@sentry/core@9.2.0/denonext/core.mjs": "77a01162e6c359c3d8740dfaa16c71fc493d9b27ccedab6e72641d5fffa3de3e",
-    "https://esm.sh/@sentry/deno@9.2.0": "4d2a7f7ea9335851c756de3bf3a8ab589b17401413bb7c5cb31432b66687e16e",
-    "https://esm.sh/@sentry/deno@9.2.0/denonext/deno.mjs": "a6f6659eb59745156b499b9a0e02455e2d623a65993a5f8a69b5a29659047fc6"
+    "https://esm.sh/@sentry/core@9.3.0": "6876ae560feeffe600d117a6d05ae9ff8c5428697f14179e7342af453759fbaf",
+    "https://esm.sh/@sentry/core@9.3.0/denonext/core.mjs": "4f80a009ce155588eb46d717b8ab7ae6f565c9261d6281eeeca9f29e0b429162",
+    "https://esm.sh/@sentry/deno@9.3.0": "1c66b970b1abb3f1a3b3336c7811e7ab7a3945caad02703f85a6ec7d868c6056",
+    "https://esm.sh/@sentry/deno@9.3.0/denonext/deno.mjs": "4c5540ff547fe99512604f020f41fa8c912ba21b7dadf1de7d4cf984e42f94fb"
   }
 }
