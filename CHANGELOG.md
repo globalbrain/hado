@@ -1,3 +1,17 @@
+## [0.9.0](https://github.com/globalbrain/hado/compare/v0.8.5...v0.9.0) (2025-02-28)
+
+### ⚠ BREAKING CHANGES
+
+- Sentry SDK is upgraded to v9. Most likely, no changes are needed in users' code, but please refer to the [migration guide](https://docs.sentry.io/platforms/javascript/guides/deno/migration/v8-to-v9/) for more details.
+
+### Features
+
+- **sentry:** upgrade to sentry v9 ([1458a19](https://github.com/globalbrain/hado/commit/1458a198f204d359a970cbe7ee79a8ff187c60d2))
+
+### Bug Fixes
+
+- **sentry:** export everything from patched sentry module as `Sentry` ([a91e153](https://github.com/globalbrain/hado/commit/a91e153ae6c47bd3ce97a0632d374e966d0d1b30))
+
 ## [0.8.5](https://github.com/globalbrain/hado/compare/v0.8.4...v0.8.5) (2025-01-16)
 
 ### Features
