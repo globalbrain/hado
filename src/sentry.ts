@@ -15,7 +15,6 @@
  */
 
 import type { Client, IntegrationFn, RequestEventData, SpanAttributes } from 'https://esm.sh/@sentry/core@9.2.0'
-// @deno-types="https://esm.sh/@sentry/deno@9.2.0"
 import {
   captureConsoleIntegration,
   captureException,
@@ -29,13 +28,16 @@ import {
   withIsolationScope,
 } from '../vendor/sentry/index.mjs'
 
+// @deno-types="https://esm.sh/@sentry/deno@9.2.0"
+export * as Sentry from '../vendor/sentry/index.mjs'
+
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
-const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
-const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
-const SEMANTIC_ATTRIBUTE_SENTRY_OP = 'sentry.op'
+export const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
+export const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
+export const SEMANTIC_ATTRIBUTE_SENTRY_OP = 'sentry.op'
 
-const INTEGRATION_NAME = 'DenoServer'
+export const INTEGRATION_NAME = 'DenoServer'
 
 /**
  * Instruments `Deno.serve` to automatically create transactions and capture errors.
