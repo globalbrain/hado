@@ -1,5 +1,5 @@
-export { abortable, deadline, debounce, delay, retry } from 'jsr:@std/async@^1.0.10'
-export { walk } from 'jsr:@std/fs@^1.0.13'
+export { abortable, deadline, debounce, delay, retry } from 'jsr:@std/async@^1.0.11'
+export { walk } from 'jsr:@std/fs@^1.0.14'
 export { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.13'
 export { joinGlobs, toFileUrl } from 'jsr:@std/path@^1.0.8'
 export { normalize as posixNormalize } from 'jsr:@std/path@^1.0.8/posix/normalize'

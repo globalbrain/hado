@@ -8,7 +8,7 @@ try {
 
 await Deno.mkdir('vendor/sentry', { recursive: true })
 
-const sentryVersion = (await Deno.readTextFile('src/sentry.ts')).match(/@sentry\/deno@(\d+\.\d+\.\d+)/)?.[1]
+const sentryVersion = (await Deno.readTextFile('src/sentry.ts')).match(/@sentry\/core@(\d+\.\d+\.\d+)/)?.[1]
 if (!sentryVersion) throw new Error('Failed to find sentry version')
 
 const importMap = {
@@ -92,6 +92,9 @@ function fill(source, name, replacementFactory) {
   outfile: 'vendor/sentry/index.mjs',
   external: ['npm:@brc-dd/globals@*'],
   entryPoints: ['@sentry/deno'],
+  banner: {
+    js: `// @ts-self-types="https://esm.sh/@sentry/deno@${sentryVersion}/build/esm/index.d.ts"`,
+  },
 })
 
 if (!patched) {
