@@ -1,20 +1,14 @@
-import { build, denoPlugins } from '../dev_deps.ts'
+import { build, denoPlugins, emptyDir } from '../dev_deps.ts'
 
-try {
-  await Deno.remove('vendor/sentry', { recursive: true })
-} catch (e) {
-  if (!(e instanceof Deno.errors.NotFound)) console.error(e)
-}
-
-await Deno.mkdir('vendor/sentry', { recursive: true })
+await emptyDir('vendor/sentry')
 
 const sentryVersion = (await Deno.readTextFile('src/sentry.ts')).match(/@sentry\/core@(\d+\.\d+\.\d+)/)?.[1]
 if (!sentryVersion) throw new Error('Failed to find sentry version')
 
 const importMap = {
   imports: {
-    '@sentry/core': `https://unpkg.com/@sentry/core@${sentryVersion}/build/esm/index.js`,
-    '@sentry/deno': `https://unpkg.com/@sentry/deno@${sentryVersion}/build/esm/index.js`,
+    '@sentry/core': `https://cdn.jsdelivr.net/npm/@sentry/core@${sentryVersion}/build/esm/index.js`,
+    '@sentry/deno': `https://cdn.jsdelivr.net/npm/@sentry/deno@${sentryVersion}/build/esm/index.js`,
   },
 }
 
@@ -26,7 +20,7 @@ await build({
       name: 'patch-sentry',
       setup(build) {
         build.onLoad({ filter: /utils-hoist\/object\.js$/ }, async (args) => {
-          const original = await (await fetch(`${args.namespace}:${args.path}${args.suffix}`)).text()
+          const original = await (await fetch(`${args.namespace}:${args.path}`)).text()
           const modified = original.replace(
             /^(function fill\(source, name, replacementFactory\)[^]*?^\})/m,
             `\
