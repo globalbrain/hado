@@ -219,12 +219,21 @@ function parseDependency(url: string | URL): Dependency {
   const protocol = url.protocol
   const body = url.hostname + url.pathname
 
+  // First attempt: standard @version format
   const matched = body.match(/^(?<name>.+)@(?<version>[^/]+)(?<path>\/.*)?$/)
-
   if (matched) {
     assertExists(matched.groups)
     const { name, version } = matched.groups
     const path = matched.groups.path ?? ''
+    return { protocol, name: name!, version, path }
+  }
+
+  // Second attempt: GitHub-style versioning in path
+  const githubMatch = body.match(/^(?<name>(?:[^/]+\/)+[^/]+)\/(?<version>v?\d+\.\d+\.\d+)(?<path>\/.*)?$/)
+  if (githubMatch) {
+    assertExists(githubMatch.groups)
+    const { name, version } = githubMatch.groups
+    const path = githubMatch.groups.path ?? ''
     return { protocol, name: name!, version, path }
   }
 
@@ -265,7 +274,9 @@ function stringifyDependency(
   include = { protocol: true, version: true, path: true, ...include }
 
   const header = include.protocol ? addSeparator(dependency.protocol) : ''
-  const version = include.version ? (dependency.version ? '@' + dependency.version : '') : ''
+  const version = include.version
+    ? (dependency.version ? (isGithub(dependency) ? '/' : '@') + dependency.version : '')
+    : ''
   const path = include.path ? dependency.path : ''
 
   return `${header}${dependency.name}${version}` + path
@@ -300,7 +311,7 @@ async function _resolveLatestVersion(
   dependency: Dependency,
   options?: { allowPreRelease?: boolean },
 ): Promise<UpdatedDependency | undefined> {
-  function _isPreRelease(version: string): boolean {
+  function _isPreRelease(version: string | SemVer.SemVer): boolean {
     if (options?.allowPreRelease) return false
     return isPreRelease(version)
   }
@@ -330,9 +341,23 @@ async function _resolveLatestVersion(
     }
     case 'http:':
     case 'https:': {
-      const response = await fetch(addSeparator(dependency.protocol) + dependency.name + dependency.path, {
-        method: 'HEAD',
-      })
+      if (isGithub(dependency)) {
+        const response = await fetch(`https://api.github.com/repos/${dependency.name.slice(26)}/tags`)
+        if (!response.ok) break
+        const tags = await response.json()
+        if (!Array.isArray(tags) || tags.length === 0) break
+        const versions = tags.map((tag) => SemVer.tryParse(tag.name)).filter((version): version is SemVer.SemVer =>
+          !!version && !_isPreRelease(version)
+        )
+        if (versions.length === 0) break
+        const latest = versions.sort(SemVer.compare).reverse()[0]
+        if (!latest) break
+        return { ...dependency, version: 'v' + SemVer.format(latest) }
+      }
+      const response = await fetch(
+        addSeparator(dependency.protocol) + dependency.name + dependency.path,
+        { method: 'HEAD' },
+      )
       await response.arrayBuffer()
       if (!response.redirected) break
       const redirected = parseDependency(response.url)
@@ -353,9 +378,13 @@ async function _resolveLatestVersion(
  * isPreRelease("0.1.0-alpha.1"); // -> true
  * ```
  */
-function isPreRelease(version: string): boolean {
-  const parsed = SemVer.tryParse(version)
+function isPreRelease(version: string | SemVer.SemVer): boolean {
+  const parsed = typeof version === 'string' ? SemVer.tryParse(version) : version
   return parsed !== undefined && parsed.prerelease !== undefined && parsed.prerelease.length > 0
+}
+
+function isGithub(dependency: Dependency): boolean {
+  return dependency.name.startsWith('raw.githubusercontent.com/')
 }
 
 // #endregion
