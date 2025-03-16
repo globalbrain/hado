@@ -76,8 +76,6 @@ const outputs = Object.fromEntries(
   ),
 )
 
-const files = denoJson.publish?.include ?? []
-
 await Deno.writeTextFile(
   'dist/package.json',
   JSON.stringify(
@@ -87,7 +85,6 @@ await Deno.writeTextFile(
       exports: Object.fromEntries(
         Object.entries(exports).map(([key, value]) => [key, outputs[value]]),
       ),
-      files,
       dependencies,
       optionalDependencies,
       peerDependencies,
@@ -99,7 +96,7 @@ await Deno.writeTextFile(
 )
 
 await Promise.all(
-  [...files, 'license', 'license.*', 'changelog', 'changelog.*', 'readme', 'readme.*']
+  [...(denoJson.publish?.include ?? []), 'license', 'license.*', 'changelog', 'changelog.*', 'readme', 'readme.*']
     .map(async (file) => {
       await Promise.all(
         (await Array.fromAsync(expandGlob(file, { caseInsensitive: true, followSymlinks: true })))
