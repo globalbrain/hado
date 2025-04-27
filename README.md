@@ -98,7 +98,7 @@ Also, note that the API routes will take precedence over static files. It is rec
 
 ## Security Considerations
 
-- Do not set `static.fsRoot` to a directory that contains sensitive files. The server will serve any file in that directory including dotfiles.
+- Do not set `static.fsRoot` to a directory that contains sensitive files.
 
 ## Contributing
 
