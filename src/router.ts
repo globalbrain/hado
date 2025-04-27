@@ -24,7 +24,6 @@
 import {
   debounce,
   escape,
-  joinGlobs,
   posixNormalize,
   serveDir,
   type ServeDirOptions,
@@ -33,7 +32,7 @@ import {
   type StatusCode,
   toFileUrl,
   walk,
-  watch,
+  watcher,
 } from '../deps.ts'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
@@ -312,12 +311,10 @@ export async function createRouter(
   }, 100)
 
   if (dev) {
-    watch(joinGlobs([fsRoot, '**', '*.ts']), {
-      ignoreInitial: true,
-      ignored: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'],
-    })
-      .on('add', reloadRouter)
-      .on('unlink', reloadRouter)
+    const subscription = await watcher.subscribe(fsRoot, (_, events) => {
+      if (events.some((e) => e.type === 'create' || e.type === 'delete')) reloadRouter()
+    }, { ignore: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'] })
+    addEventListener('unload', subscription.unsubscribe)
   }
 
   const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
@@ -395,7 +392,6 @@ export function createStandardResponse(status: StatusCode, init?: ResponseInit):
  * - use more efficient LRU cache implementation (https://jsr.io/@std/cache) or Web Cache API (https://deno.com/blog/deploy-cache-api)
  * - use eager loading in production mode
  * - don't destroy whole tree on single file change
- * - use @parcel/watcher once https://github.com/denoland/deno/issues/20071 is resolved / update chokidar to v4
  * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433), add services docs
  * - store static routes in a map instead of tree for faster lookup
  */

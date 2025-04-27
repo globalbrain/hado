@@ -30,7 +30,7 @@
     "check": "deno task format:fail && deno task lint:fail && deno task type && deno task test",
     "release": "deno run -A ./scripts/release.ts",
     "vendor": "deno run -A ./scripts/vendor.ts",
-    "update": "deno run -A ./scripts/update.ts -x chokidar && deno task vendor && deno task check"
+    "update": "deno run -A ./scripts/update.ts && deno task vendor && deno task check"
   },
   "fmt": {
     "lineWidth": 120,
