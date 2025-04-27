@@ -1,3 +1,9 @@
+## [0.10.0](https://github.com/globalbrain/hado/compare/v0.9.4...v0.10.0) (2025-04-27)
+
+### Features
+
+- re-introduce `@parcel/watcher` ([1d083fd](https://github.com/globalbrain/hado/commit/1d083fd46e9b770e84c1516d24c46d0db5a6d752))
+
 ## [0.9.4](https://github.com/globalbrain/hado/compare/v0.9.3...v0.9.4) (2025-03-16)
 
 ## [0.9.3](https://github.com/globalbrain/hado/compare/v0.9.2...v0.9.3) (2025-03-16)
