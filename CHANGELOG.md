@@ -1,3 +1,9 @@
+## [0.10.1](https://github.com/globalbrain/hado/compare/v0.10.0...v0.10.1) (2025-04-28)
+
+### Bug Fixes
+
+- watcher ignore patterns ([48ca2d1](https://github.com/globalbrain/hado/commit/48ca2d13e9f30c68b6f69bcc45bb11f0fc725ef4))
+
 ## [0.10.0](https://github.com/globalbrain/hado/compare/v0.9.4...v0.10.0) (2025-04-27)
 
 ### Features
