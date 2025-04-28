@@ -30,12 +30,15 @@ import {
   STATUS_CODE,
   STATUS_TEXT,
   type StatusCode,
+  subscribe,
   toFileUrl,
   walk,
-  watcher,
 } from '../deps.ts'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
+const watchOpts = Object.freeze({
+  ignoreGlobs: [/^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/.source],
+})
 
 type Awaitable<T> = T | Promise<T>
 type Params = Record<string, string | string[]>
@@ -311,9 +314,9 @@ export async function createRouter(
   }, 100)
 
   if (dev) {
-    const subscription = await watcher.subscribe(fsRoot, (_, events) => {
+    const subscription = await subscribe(fsRoot, (_, events) => {
       if (events.some((e) => e.type === 'create' || e.type === 'delete')) reloadRouter()
-    }, { ignore: ['**/*.d.ts', '**/_*', '**/.*', '**/coverage/**', '**/node_modules/**'] })
+    }, watchOpts)
     addEventListener('unload', subscription.unsubscribe)
   }
 

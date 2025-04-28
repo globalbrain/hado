@@ -42,7 +42,7 @@
     "jsr:@std/streams@^1.0.9": "1.0.9",
     "jsr:@std/text@~1.0.7": "1.0.13",
     "npm:@brc-dd/globals@0.1": "0.1.0",
-    "npm:@brc-dd/watcher@2.5.1-0": "2.5.1-0",
+    "npm:@brc-dd/watcher@2.5.1-2": "2.5.1-2",
     "npm:@types/node@*": "22.12.0",
     "npm:esbuild@~0.25.3": "0.25.3",
     "npm:unplugin-isolated-decl@~0.13.10": "0.13.10",
@@ -195,21 +195,14 @@
     "@brc-dd/globals@0.1.0": {
       "integrity": "sha512-osgMTmieMs3q1ZoutX2vTd63eMKNpcFwk8krqZTSq7xzq2Pis6mLgANnQtCotWypZrQMDNqDZojIWr6Vn0EV/w=="
     },
-    "@brc-dd/watcher@2.5.1-0": {
-      "integrity": "sha512-nRh8V4bH+ofI4jijWLmVXi1GcoLI2Wv+0DVvuNHeZhXvPQSuO4+tn4uOdrxnoUJY0sVYKN5R9a9d9QJU0I8pLg==",
+    "@brc-dd/watcher@2.5.1-2": {
+      "integrity": "sha512-876c6QE2IBrNS0VLPfiRsfuZaaeaBsZLvtS3PpV0HpRKSby7O5O7847AdjivulMgp9A+ktBled7Pn+Nogu/08A==",
       "dependencies": [
-        "@parcel/watcher-android-arm64",
         "@parcel/watcher-darwin-arm64",
         "@parcel/watcher-darwin-x64",
-        "@parcel/watcher-freebsd-x64",
-        "@parcel/watcher-linux-arm-glibc",
-        "@parcel/watcher-linux-arm-musl",
         "@parcel/watcher-linux-arm64-glibc",
-        "@parcel/watcher-linux-arm64-musl",
         "@parcel/watcher-linux-x64-glibc",
-        "@parcel/watcher-linux-x64-musl",
         "@parcel/watcher-win32-arm64",
-        "@parcel/watcher-win32-ia32",
         "@parcel/watcher-win32-x64"
       ]
     },
@@ -387,41 +380,20 @@
     "@oxc-transform/binding-win32-x64-msvc@0.66.0": {
       "integrity": "sha512-ZsIZeXr4Zexz/Sm4KoRlkjHda56eSCQizCM0E0fSyROwCjSiG+LT+L5czydBxietD1dZ4gSif8nMKzTMQrra7A=="
     },
-    "@parcel/watcher-android-arm64@2.5.1": {
-      "integrity": "sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA=="
-    },
     "@parcel/watcher-darwin-arm64@2.5.1": {
       "integrity": "sha512-eAzPv5osDmZyBhou8PoF4i6RQXAfeKL9tjb3QzYuccXFMQU0ruIc/POh30ePnaOyD1UXdlKguHBmsTs53tVoPw=="
     },
     "@parcel/watcher-darwin-x64@2.5.1": {
       "integrity": "sha512-1ZXDthrnNmwv10A0/3AJNZ9JGlzrF82i3gNQcWOzd7nJ8aj+ILyW1MTxVk35Db0u91oD5Nlk9MBiujMlwmeXZg=="
     },
-    "@parcel/watcher-freebsd-x64@2.5.1": {
-      "integrity": "sha512-SI4eljM7Flp9yPuKi8W0ird8TI/JK6CSxju3NojVI6BjHsTyK7zxA9urjVjEKJ5MBYC+bLmMcbAWlZ+rFkLpJQ=="
-    },
-    "@parcel/watcher-linux-arm-glibc@2.5.1": {
-      "integrity": "sha512-RCdZlEyTs8geyBkkcnPWvtXLY44BCeZKmGYRtSgtwwnHR4dxfHRG3gR99XdMEdQ7KeiDdasJwwvNSF5jKtDwdA=="
-    },
-    "@parcel/watcher-linux-arm-musl@2.5.1": {
-      "integrity": "sha512-6E+m/Mm1t1yhB8X412stiKFG3XykmgdIOqhjWj+VL8oHkKABfu/gjFj8DvLrYVHSBNC+/u5PeNrujiSQ1zwd1Q=="
-    },
     "@parcel/watcher-linux-arm64-glibc@2.5.1": {
       "integrity": "sha512-LrGp+f02yU3BN9A+DGuY3v3bmnFUggAITBGriZHUREfNEzZh/GO06FF5u2kx8x+GBEUYfyTGamol4j3m9ANe8w=="
-    },
-    "@parcel/watcher-linux-arm64-musl@2.5.1": {
-      "integrity": "sha512-cFOjABi92pMYRXS7AcQv9/M1YuKRw8SZniCDw0ssQb/noPkRzA+HBDkwmyOJYp5wXcsTrhxO0zq1U11cK9jsFg=="
     },
     "@parcel/watcher-linux-x64-glibc@2.5.1": {
       "integrity": "sha512-GcESn8NZySmfwlTsIur+49yDqSny2IhPeZfXunQi48DMugKeZ7uy1FX83pO0X22sHntJ4Ub+9k34XQCX+oHt2A=="
     },
-    "@parcel/watcher-linux-x64-musl@2.5.1": {
-      "integrity": "sha512-n0E2EQbatQ3bXhcH2D1XIAANAcTZkQICBPVaxMeaCVBtOpBZpWJuf7LwyWPSBDITb7In8mqQgJ7gH8CILCURXg=="
-    },
     "@parcel/watcher-win32-arm64@2.5.1": {
       "integrity": "sha512-RFzklRvmc3PkjKjry3hLF9wD7ppR4AKcWNzH7kXR7GUe0Igb3Nz8fyPwtZCSquGrhU5HhUNDr/mKBqj7tqA2Vw=="
-    },
-    "@parcel/watcher-win32-ia32@2.5.1": {
-      "integrity": "sha512-c2KkcVN+NJmuA7CGlaGD1qJh1cLfDnQsHjE89E60vUEMlqduHGCdCLJCID5geFVM0dOtA3ZiIO8BoEQmzQVfpQ=="
     },
     "@parcel/watcher-win32-x64@2.5.1": {
       "integrity": "sha512-9lHBdJITeNR++EvSQVUcaZoWupyHfXe1jZvGZ06O/5MflPcuPLtEphScIBL+AiCWBO46tDSHzWyD0uDmmZqsgA=="
