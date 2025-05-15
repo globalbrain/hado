@@ -55,6 +55,10 @@ const pools = new Map<string, Semaphore>()
 // #region Wrapper
 
 type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
+type ResponseOrError<Schema extends ZodType | undefined> =
+  | { success: true; data: OutputOrResponse<Schema>; error?: never }
+  | { success: false; data?: never; error: unknown }
+type Require<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>
 
 /**
  * Options for {@link fetchAll}.
@@ -85,6 +89,11 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
    * Default: No validation. (returns the response object)
    */
   schema?: Schema
+  /**
+   * The maximum number of requests to make concurrently.\
+   * Default: 64 requests per pool.
+   */
+  concurrency?: number
 }
 
 /**
@@ -114,11 +123,7 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
   requests: Request[],
   options: FetchOptions<Schema> = {},
 ): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
-  const key = options.pool ?? URL.parse(requests[0]!.url)?.host
-  if (!key) throw new Error('No pool key provided')
-
-  let pool = pools.get(key)
-  if (!pool) pools.set(key, pool = new Semaphore(64))
+  const pool = getPool(options, URL.parse(requests[0]!.url)?.host)
 
   const p = Promise.allSettled(requests.map((req) => _fetch(req, options, pool)))
   const res = await deadline(p, options.deadline ?? 300_000) // 5 minutes
@@ -131,6 +136,91 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
 
   const parsed = await Promise.allSettled(values.map((res) => res.json().then(schema.parse)))
   return collect(parsed, errors)
+}
+
+/**
+ * Fetch data concurrently from an array of items using a provided request factory.\
+ * Yields results as they become available, preserving high throughput with concurrency control.
+ *
+ * Automatically handles rate limiting, request timeouts, retries, and optional schema validation.\
+ * The pool is shared across all calls using the same key.
+ *
+ * @template T The item type of the input array.
+ * @template Schema An optional Zod schema to validate the response body (for JSON responses).
+ *
+ * @param arr The array of items to be processed into requests.
+ * @param fn A function that maps each item in `arr` to a `Request` object.
+ * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+ *
+ * @returns An async generator yielding `ResponseOrError<Schema>` objects in the order results become available.
+ *
+ * @throws {Error} If no pool key is provided or pool setup fails.
+ *
+ * @example
+ * ```ts
+ * const users = ['1', '2', '3']
+ *
+ * for await (const result of concurrentArrayFetcher(users, id => new Request(`/api/user/${id}`), {
+ *   pool: 'user-api',
+ *   schema: UserSchema,
+ *   concurrency: 10,
+ * })) {
+ *   if (result.success) {
+ *     console.log('User data:', result.data)
+ *   } else {
+ *     console.error('Fetch error:', result.error)
+ *   }
+ * }
+ * ```
+ */
+export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefined = undefined>(
+  arr: T[],
+  fn: (item: T) => Request,
+  options: Omit<Require<FetchOptions<Schema>, 'pool'>, 'deadline'>,
+): AsyncGenerator<ResponseOrError<Schema>> {
+  const pool = getPool(options)
+  const concurrency = options.concurrency ?? 64
+  const schema = options.schema
+
+  const queue = [...arr]
+  const inProgress = new Set<Promise<void>>()
+
+  const runTask = async (item: T) => {
+    let result: ResponseOrError<Schema>
+
+    try {
+      await pool.acquire()
+
+      const response = await _fetch(fn(item), options)
+      const data = schema ? await response.json().then(schema.parse) : response
+
+      result = { success: true, data }
+
+      //
+    } catch (error) {
+      result = { success: false, error }
+
+      //
+    } finally {
+      pool.release()
+      yieldResult(result!)
+    }
+  }
+
+  let yieldResult: (value: ResponseOrError<Schema>) => void = () => {}
+
+  while (queue.length || inProgress.size) {
+    while (inProgress.size < concurrency && queue.length) {
+      const item = queue.shift()!
+      const task = (() => runTask(item))()
+      inProgress.add(task)
+      task.finally(() => inProgress.delete(task))
+    }
+
+    yield await new Promise((resolve) => {
+      yieldResult = resolve
+    })
+  }
 }
 
 // #endregion
@@ -150,12 +240,23 @@ class FetchError extends Error {
   }
 }
 
-function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, pool: Semaphore): Promise<Response> {
+function getPool(options: Pick<FetchOptions, 'pool' | 'concurrency'>, defaultKey?: string): Semaphore {
+  const key = options.pool ?? defaultKey
+  if (!key) throw new Error('No pool key provided')
+
+  let pool = pools.get(key)
+  if (pool) return pool
+
+  pools.set(key, pool = new Semaphore(options.concurrency ?? 64))
+  return pool
+}
+
+function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, pool?: Semaphore): Promise<Response> {
   const c = new AbortController()
 
   const p = retry(
     async () => {
-      await pool.acquire()
+      await pool?.acquire()
 
       try {
         const res = await deadline(fetch(req), options.timeout ?? 10_000)
@@ -185,7 +286,7 @@ function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, 
 
         //
       } finally {
-        pool.release()
+        pool?.release()
       }
 
       //
