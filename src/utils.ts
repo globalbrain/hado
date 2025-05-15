@@ -55,9 +55,9 @@ const pools = new Map<string, Semaphore>()
 // #region Wrapper
 
 type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
-type ResponseOrError<Schema extends ZodType | undefined> =
-  | { success: true; data: OutputOrResponse<Schema>; error?: never }
-  | { success: false; data?: never; error: unknown }
+type ResponseOrError<T, Schema extends ZodType | undefined> =
+  | { source: T; success: true; data: OutputOrResponse<Schema>; error?: never }
+  | { source: T; success: false; data?: never; error: unknown }
 type Require<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>
 
 /**
@@ -177,7 +177,7 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
   arr: T[],
   fn: (item: T) => Request,
   options: Omit<Require<FetchOptions<Schema>, 'pool'>, 'deadline'>,
-): AsyncGenerator<ResponseOrError<Schema>> {
+): AsyncGenerator<ResponseOrError<T, Schema>> {
   const pool = getPool(options)
   const concurrency = options.concurrency ?? 64
   const schema = options.schema
@@ -186,7 +186,7 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
   const inProgress = new Set<Promise<void>>()
 
   const runTask = async (item: T) => {
-    let result: ResponseOrError<Schema>
+    let result: ResponseOrError<T, Schema>
 
     try {
       await pool.acquire()
@@ -194,11 +194,11 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
       const response = await _fetch(fn(item), options)
       const data = schema ? await response.json().then(schema.parse) : response
 
-      result = { success: true, data }
+      result = { source: item, success: true, data }
 
       //
     } catch (error) {
-      result = { success: false, error }
+      result = { source: item, success: false, error }
 
       //
     } finally {
@@ -207,7 +207,7 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
     }
   }
 
-  let yieldResult: (value: ResponseOrError<Schema>) => void = () => {}
+  let yieldResult: (value: ResponseOrError<T, Schema>) => void = () => {}
 
   while (queue.length || inProgress.size) {
     while (inProgress.size < concurrency && queue.length) {
@@ -273,6 +273,7 @@ function _fetch(
         if (!retryMethods.has(req.method)) return c.abort(error) // don't retry
 
         if (error instanceof FetchError && retryStatusCodes.has(error.response.status)) {
+          await error.response.body?.cancel()
           const retryAfter = error.response.headers.get('Retry-After')
 
           if (retryAfter) {
