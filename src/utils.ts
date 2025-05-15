@@ -73,7 +73,7 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
    * The maximum number of attempts to make.\
    * Default: 5 attempts per request. (4 retries)
    */
-  retry?: number
+  maxAttempts?: number
   /**
    * The maximum time to wait for a response.\
    * Default: 10000ms (10 seconds)
@@ -251,7 +251,11 @@ function getPool(options: Pick<FetchOptions, 'pool' | 'concurrency'>, defaultKey
   return pool
 }
 
-function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, pool?: Semaphore): Promise<Response> {
+function _fetch(
+  req: Request,
+  options: Pick<FetchOptions, 'maxAttempts' | 'timeout'>,
+  pool?: Semaphore,
+): Promise<Response> {
   const c = new AbortController()
 
   const p = retry(
@@ -291,7 +295,7 @@ function _fetch(req: Request, options: Pick<FetchOptions, 'retry' | 'timeout'>, 
 
       //
     },
-    { maxAttempts: options.retry ?? 5 },
+    { maxAttempts: options.maxAttempts ?? 5 },
   )
 
   return abortable(p, c.signal) as Promise<Exclude<Awaited<typeof p>, void>>
