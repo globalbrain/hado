@@ -1,3 +1,9 @@
+## [0.11.0](https://github.com/globalbrain/hado/compare/v0.10.1...v0.11.0) (2025-05-15)
+
+### Features
+
+- **utils:** add `concurrentArrayFetcher` ([8886fd5](https://github.com/globalbrain/hado/commit/8886fd5596890bcc0bb783b074e8d7782d59fe8b))
+
 ## [0.10.1](https://github.com/globalbrain/hado/compare/v0.10.0...v0.10.1) (2025-04-28)
 
 ### Bug Fixes
