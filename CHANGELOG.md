@@ -1,12 +1,19 @@
+## [0.12.1](https://github.com/globalbrain/hado/compare/v0.12.0...v0.12.1) (2025-05-16)
+
+### Bug Fixes
+
+- **utils:** properly abort fetch in case of timeout ([6e0f6e7](https://github.com/globalbrain/hado/commit/6e0f6e77de5ce27fcdbe10354578ec3b93cba14c))
+- **utils:** outdated jsdocs, async zod schema support ([37cf737](https://github.com/globalbrain/hado/commit/37cf7377cd0dd54b2c9144aac2ce5297baa5d01c))
+
 ## [0.12.0](https://github.com/globalbrain/hado/compare/v0.11.0...v0.12.0) (2025-05-15)
 
 ### ⚠ BREAKING CHANGES
 
-- rename `retry` to `maxAttempts` in fetch utils ([9f79383](https://github.com/globalbrain/hado/commit/9f7938338a732c1793bf4e60c39ce62b9a586822))
+- **utils:** rename `retry` to `maxAttempts` in fetch utils ([9f79383](https://github.com/globalbrain/hado/commit/9f7938338a732c1793bf4e60c39ce62b9a586822))
 
 ### Features
 
-- return source item in concurrentArrayFetcher ([62cbf20](https://github.com/globalbrain/hado/commit/62cbf207f2b1085dab7df0f1f64209797ff5e608))
+- **utils:** return source item in concurrentArrayFetcher ([62cbf20](https://github.com/globalbrain/hado/commit/62cbf207f2b1085dab7df0f1f64209797ff5e608))
 
 ## [0.11.0](https://github.com/globalbrain/hado/compare/v0.10.1...v0.11.0) (2025-05-15)
 
