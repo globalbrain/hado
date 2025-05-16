@@ -48,7 +48,7 @@ class Semaphore {
   }
 }
 
-const pools = new Map<string, Semaphore>()
+const pools = new Map<string, Semaphore>() // FIXME: memory leak - never released
 
 // #endregion
 
@@ -115,9 +115,6 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
  * @param requests The requests to fetch.
  * @param options The fetch options.
  * @returns The responses. (or parsed and validated JSON data if options.schema is provided)
- *
- * @throws {AggregateError} If any request fails.
- * @throws {import('@std/async').DeadlineError} If the deadline is exceeded.
  */
 export async function fetchAll<Schema extends ZodType | undefined = undefined>(
   requests: Request[],
@@ -135,7 +132,7 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
   // @ts-expect-error - conditionally typed
   if (!schema) return { values, errors }
 
-  const parsed = await Promise.allSettled(values.map((res) => res.json().then(schema.parse)))
+  const parsed = await Promise.allSettled(values.map((res) => res.json().then((json) => schema.parseAsync(json))))
   return collect(parsed, errors)
 }
 
@@ -292,7 +289,8 @@ async function _fetch(
           if (Number.isNaN(after)) after = Date.parse(retryAfter)
           if (Number.isNaN(after) || after >= maxRetryAfter) break // invalid header or too long to wait
 
-          if (after > 0) await delay(after - Date.now(), { signal: parentSignal }) // wait before retrying
+          const wait = after - Date.now()
+          if (wait > 0) await delay(wait, { signal: parentSignal }) // wait before retrying
         }
       }
     } finally {
