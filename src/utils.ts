@@ -23,7 +23,7 @@
  *       https://github.com/nodejs/undici/blob/5f11247b34510a3dc821da3c10d3cea0f39a7b13/lib/handler/retry-handler.js
  */
 
-import { abortable, deadline, delay, retry, type ZodType } from '../deps.ts'
+import { delay, type ZodType } from '../deps.ts'
 
 // #region Pooling
 
@@ -125,8 +125,9 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
 ): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
   const pool = getPool(options, URL.parse(requests[0]!.url)?.host)
 
-  const p = Promise.allSettled(requests.map((req) => _fetch(req, options, pool)))
-  const res = await deadline(p, options.deadline ?? 300_000) // 5 minutes
+  const res = await deadline((signal) => {
+    return Promise.allSettled(requests.map((req) => _fetch(req, options, signal, pool)))
+  }, options.deadline ?? 300_000) // 5 minutes
 
   const { values, errors } = collect(res)
   const schema = options.schema
@@ -227,7 +228,7 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
 
 // #region Logic
 
-const retryMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
+const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
 const retryStatusCodes = new Set([408, 429, 500, 502, 503, 504])
 
 class FetchError extends Error {
@@ -251,55 +252,55 @@ function getPool(options: Pick<FetchOptions, 'pool' | 'concurrency'>, defaultKey
   return pool
 }
 
-function _fetch(
+async function _fetch(
   req: Request,
   options: Pick<FetchOptions, 'maxAttempts' | 'timeout'>,
+  parentSignal?: AbortSignal,
   pool?: Semaphore,
 ): Promise<Response> {
-  const c = new AbortController()
+  let maxAttempts = idempotentMethods.has(req.method) ? (options.maxAttempts ?? 5) : 1
+  const timeout = options.timeout ?? 10_000
+  const maxRetryAfter = Date.now() + maxAttempts * timeout
 
-  const p = retry(
-    async () => {
+  let lastError: unknown
+
+  while (maxAttempts-- > 0) {
+    try {
       await pool?.acquire()
 
-      try {
-        const res = await deadline(fetch(req), options.timeout ?? 10_000)
+      const res = await deadline((signal) => {
+        return fetch(req, {
+          signal: AbortSignal.any([req.signal, signal, ...(parentSignal ? [parentSignal] : [])]),
+        })
+      }, timeout)
 
-        if (res.ok) return res
-        throw new FetchError(req, res)
-
-        //
-      } catch (error: unknown) {
-        if (!retryMethods.has(req.method)) return c.abort(error) // don't retry
-
-        if (error instanceof FetchError && retryStatusCodes.has(error.response.status)) {
-          await error.response.body?.cancel()
-          const retryAfter = error.response.headers.get('Retry-After')
-
-          if (retryAfter) {
-            let after = Number(retryAfter)
-
-            if (Number.isNaN(after)) after = Date.parse(retryAfter) - Date.now()
-            else after *= 1000
-
-            if (after > 60_000) return c.abort(error) // too long, don't retry
-            if (after > 0) await delay(after)
-          }
-        }
-
-        throw error
-
-        //
-      } finally {
-        pool?.release()
-      }
+      if (res.ok) return res
+      throw new FetchError(req, res)
 
       //
-    },
-    { maxAttempts: options.maxAttempts ?? 5 },
-  )
+    } catch (error: unknown) {
+      lastError = error
 
-  return abortable(p, c.signal) as Promise<Exclude<Awaited<typeof p>, void>>
+      if (maxAttempts <= 0 || parentSignal?.aborted) break // no more attempts left or outer deadline exceeded
+
+      if (error instanceof FetchError && retryStatusCodes.has(error.response.status)) {
+        const retryAfter = error.response.headers.get('Retry-After')
+
+        if (retryAfter) {
+          let after = Number(retryAfter) * 1000 + Date.now()
+
+          if (Number.isNaN(after)) after = Date.parse(retryAfter)
+          if (Number.isNaN(after) || after >= maxRetryAfter) break // invalid header or too long to wait
+
+          if (after > 0) await delay(after - Date.now(), { signal: parentSignal }) // wait before retrying
+        }
+      }
+    } finally {
+      pool?.release()
+    }
+  }
+
+  throw lastError
 }
 
 function collect<T>(input: PromiseSettledResult<T>[], errors: unknown[] = []): { values: T[]; errors?: unknown[] } {
@@ -309,6 +310,17 @@ function collect<T>(input: PromiseSettledResult<T>[], errors: unknown[] = []): {
     else errors.push(v.reason)
   })
   return errors.length ? { values, errors } : { values }
+}
+
+function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+  const c = new AbortController()
+  const timeout = AbortSignal.timeout(ms)
+  const abort = () => c.abort(timeout.reason)
+  if (timeout.aborted) abort()
+  timeout.addEventListener('abort', abort, { once: true })
+  return p(c.signal).finally(() => {
+    timeout.removeEventListener('abort', abort)
+  })
 }
 
 // #endregion
