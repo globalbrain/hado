@@ -1,3 +1,9 @@
+## [0.13.0](https://github.com/globalbrain/hado/compare/v0.12.1...v0.13.0) (2025-05-17)
+
+### Features
+
+- **utils:** add `deadline` option to `concurrentArrayFetcher` too ([8626cde](https://github.com/globalbrain/hado/commit/8626cde367a275fb58cc2d042c118a0df60832ea))
+
 ## [0.12.1](https://github.com/globalbrain/hado/compare/v0.12.0...v0.12.1) (2025-05-16)
 
 ### Bug Fixes
@@ -13,7 +19,7 @@
 
 ### Features
 
-- **utils:** return source item in concurrentArrayFetcher ([62cbf20](https://github.com/globalbrain/hado/commit/62cbf207f2b1085dab7df0f1f64209797ff5e608))
+- **utils:** return source item in `concurrentArrayFetcher` ([62cbf20](https://github.com/globalbrain/hado/commit/62cbf207f2b1085dab7df0f1f64209797ff5e608))
 
 ## [0.11.0](https://github.com/globalbrain/hado/compare/v0.10.1...v0.11.0) (2025-05-15)
 
