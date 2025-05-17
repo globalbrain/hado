@@ -57,7 +57,7 @@ const pools = new Map<string, Semaphore>() // FIXME: memory leak - never release
 type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
 type ResponseOrError<T, Schema extends ZodType | undefined> =
   | { source: T; success: true; data: OutputOrResponse<Schema>; error?: never }
-  | { source: T; success: false; data?: never; error: unknown }
+  | { source?: T; success: false; data?: never; error: unknown }
 type Require<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>
 
 /**
@@ -174,22 +174,24 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
 export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefined = undefined>(
   arr: T[],
   fn: (item: T) => Request,
-  options: Omit<Require<FetchOptions<Schema>, 'pool'>, 'deadline'>,
+  options: Require<FetchOptions<Schema>, 'pool'>,
 ): AsyncGenerator<ResponseOrError<T, Schema>> {
   const pool = getPool(options)
   const concurrency = options.concurrency ?? 64
   const schema = options.schema
+  const signal = AbortSignal.timeout(options.deadline ?? 300_000) // 5 minutes
 
   const queue = [...arr]
   const inProgress = new Set<Promise<void>>()
 
   const runTask = async (item: T) => {
+    if (signal.aborted) return
     let result: ResponseOrError<T, Schema>
 
     try {
       await pool.acquire()
 
-      const response = await _fetch(fn(item), options)
+      const response = await _fetch(fn(item), options, signal)
       const data = schema ? await response.json().then(schema.parse) : response
 
       result = { source: item, success: true, data }
@@ -208,6 +210,13 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
   let yieldResult: (value: ResponseOrError<T, Schema>) => void = () => {}
 
   while (queue.length || inProgress.size) {
+    if (signal.aborted) {
+      inProgress.clear()
+      queue.length = 0
+      yieldResult({ source: undefined, success: false, error: signal.reason })
+      break
+    }
+
     while (inProgress.size < concurrency && queue.length) {
       const item = queue.shift()!
       const task = (() => runTask(item))()
