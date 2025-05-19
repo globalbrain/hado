@@ -252,7 +252,7 @@ async function _fetch(
   parentSignal?: AbortSignal,
   pool?: Semaphore,
 ): Promise<Response> {
-  maxAttempts = idempotentMethods.has(req.method) ? maxAttempts : 1
+  if (!idempotentMethods.has(req.method)) maxAttempts = 1
   const maxRetryAfter = Date.now() + maxAttempts * timeout
 
   let lastError: unknown
