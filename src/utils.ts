@@ -54,21 +54,29 @@ const pools = new Map<string, Semaphore>() // FIXME: memory leak - never release
 
 // #region Wrapper
 
-type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
-type ResponseOrError<T, Schema extends ZodType | undefined> =
+/**
+ * Type of the values returned by {@link fetchAll}.\
+ * If a schema is provided, the parsed and validated response body is returned.\
+ * Otherwise, the `Response` object is returned.
+ */
+export type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
+/**
+ * Type of the items yielded by {@link concurrentArrayFetcher}.\
+ * If a schema is provided, the parsed and validated response body is returned.\
+ * `source` can be `undefined` in certain cases, like if the deadline is exceeded.
+ */
+export type ResponseOrError<T, Schema extends ZodType | undefined> =
   | { source: T; success: true; data: OutputOrResponse<Schema>; error?: never }
   | { source?: T; success: false; data?: never; error: unknown }
-type Require<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>
 
 /**
  * Options for {@link fetchAll}.
  */
 export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
   /**
-   * The pool key to use for rate limiting.\
-   * If not provided, the host of the first request will be used.
+   * The pool key to use for rate limiting.
    */
-  pool?: string
+  key: string
   /**
    * The maximum number of attempts to make.\
    * Default: 5 attempts per request. (4 retries)
@@ -118,22 +126,13 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
  */
 export async function fetchAll<Schema extends ZodType | undefined = undefined>(
   requests: Request[],
-  options: FetchOptions<Schema> = {},
+  options: FetchOptions<Schema>,
 ): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
-  const pool = getPool(options, URL.parse(requests[0]!.url)?.host)
-
-  const res = await deadline((signal) => {
-    return Promise.allSettled(requests.map((req) => _fetch(req, options, signal, pool)))
-  }, options.deadline ?? 300_000) // 5 minutes
-
-  const { values, errors } = collect(res)
-  const schema = options.schema
-
-  // @ts-expect-error - conditionally typed
-  if (!schema) return { values, errors }
-
-  const parsed = await Promise.allSettled(values.map((res) => res.json().then((json) => schema.parseAsync(json))))
-  return collect(parsed, errors)
+  const values: OutputOrResponse<Schema>[] = []
+  const errors: unknown[] = []
+  ;(await Array.fromAsync(concurrentArrayFetcher(requests, (req) => req, options)))
+    .forEach((r) => r.success ? values.push(r.data) : errors.push(r.error))
+  return errors.length ? { values, errors } : { values }
 }
 
 /**
@@ -174,12 +173,12 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
 export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefined = undefined>(
   arr: T[],
   fn: (item: T) => Request,
-  options: Require<FetchOptions<Schema>, 'pool'>,
+  { key, maxAttempts = 5, timeout = 10_000, deadline = 300_000, schema, concurrency = 64 }: FetchOptions<Schema>,
 ): AsyncGenerator<ResponseOrError<T, Schema>> {
-  const pool = getPool(options)
-  const concurrency = options.concurrency ?? 64
-  const schema = options.schema
-  const signal = AbortSignal.timeout(options.deadline ?? 300_000) // 5 minutes
+  let pool = pools.get(key)
+  if (!pool) pools.set(key, pool = new Semaphore(concurrency))
+
+  const signal = AbortSignal.timeout(deadline)
 
   const queue = [...arr]
   const inProgress = new Set<Promise<void>>()
@@ -191,8 +190,8 @@ export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefi
     try {
       await pool.acquire()
 
-      const response = await _fetch(fn(item), options, signal)
-      const data = schema ? await response.json().then(schema.parse) : response
+      const response = await _fetch(fn(item), { maxAttempts, timeout }, signal)
+      const data = schema ? await response.json().then((json) => schema.parseAsync(json)) : response
 
       result = { source: item, success: true, data }
 
@@ -247,25 +246,13 @@ class FetchError extends Error {
   }
 }
 
-function getPool(options: Pick<FetchOptions, 'pool' | 'concurrency'>, defaultKey?: string): Semaphore {
-  const key = options.pool ?? defaultKey
-  if (!key) throw new Error('No pool key provided')
-
-  let pool = pools.get(key)
-  if (pool) return pool
-
-  pools.set(key, pool = new Semaphore(options.concurrency ?? 64))
-  return pool
-}
-
 async function _fetch(
   req: Request,
-  options: Pick<FetchOptions, 'maxAttempts' | 'timeout'>,
+  { maxAttempts, timeout }: { maxAttempts: number; timeout: number },
   parentSignal?: AbortSignal,
   pool?: Semaphore,
 ): Promise<Response> {
-  let maxAttempts = idempotentMethods.has(req.method) ? (options.maxAttempts ?? 5) : 1
-  const timeout = options.timeout ?? 10_000
+  maxAttempts = idempotentMethods.has(req.method) ? maxAttempts : 1
   const maxRetryAfter = Date.now() + maxAttempts * timeout
 
   let lastError: unknown
@@ -275,9 +262,7 @@ async function _fetch(
       await pool?.acquire()
 
       const res = await deadline((signal) => {
-        return fetch(req, {
-          signal: AbortSignal.any([req.signal, signal, ...(parentSignal ? [parentSignal] : [])]),
-        })
+        return fetch(req, { signal: AbortSignal.any([req.signal, signal, ...(parentSignal ? [parentSignal] : [])]) })
       }, timeout)
 
       if (res.ok) return res
@@ -302,21 +287,14 @@ async function _fetch(
           if (wait > 0) await delay(wait, { signal: parentSignal }) // wait before retrying
         }
       }
+
+      //
     } finally {
       pool?.release()
     }
   }
 
   throw lastError
-}
-
-function collect<T>(input: PromiseSettledResult<T>[], errors: unknown[] = []): { values: T[]; errors?: unknown[] } {
-  const values: T[] = []
-  input.forEach((v) => {
-    if (v.status === 'fulfilled') values.push(v.value)
-    else errors.push(v.reason)
-  })
-  return errors.length ? { values, errors } : { values }
 }
 
 function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
