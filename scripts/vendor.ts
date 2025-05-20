@@ -66,17 +66,12 @@ function fill(source, name, replacementFactory) {
 }`,
           )
 
-          patched = true
-
-          return {
-            contents: `import { patchGlobal } from 'npm:@brc-dd/globals@^0.1.0';${modified}`,
-          }
+          patched = original !== modified
+          return { contents: `import { patchGlobal } from 'npm:@brc-dd/globals@^0.1.0';${modified}` }
         })
       },
     },
-    ...denoPlugins({
-      importMapURL: `data:application/json;base64,${btoa(JSON.stringify(importMap))}`,
-    }),
+    ...denoPlugins({ importMapURL: `data:application/json;base64,${btoa(JSON.stringify(importMap))}` }),
   ],
 
   format: 'esm',
@@ -86,11 +81,7 @@ function fill(source, name, replacementFactory) {
   outfile: 'vendor/sentry/index.mjs',
   external: ['npm:@brc-dd/globals@*'],
   entryPoints: ['@sentry/deno'],
-  banner: {
-    js: `// @ts-self-types="https://esm.sh/@sentry/deno@${sentryVersion}/build/esm/index.d.ts"`,
-  },
+  banner: { js: `// @ts-self-types="https://esm.sh/@sentry/deno@${sentryVersion}/build/esm/index.d.ts"` },
 })
 
-if (!patched) {
-  throw new Error('Failed to patch sentry')
-}
+if (!patched) throw new Error('Failed to patch sentry')
