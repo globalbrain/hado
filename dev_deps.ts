@@ -24,7 +24,7 @@ export { dirname, fromFileUrl, relative, resolve, toFileUrl } from 'jsr:@std/pat
 export { escape } from 'jsr:@std/regexp@^1.0.1'
 export * as SemVer from 'jsr:@std/semver@^1.0.5'
 export { build } from 'npm:esbuild@^0.25.4'
-export { default as tsid } from 'npm:unplugin-isolated-decl@^0.14.1/esbuild'
+export { default as tsid } from 'npm:unplugin-isolated-decl@^0.14.2/esbuild'
 
 export const $ = new Proxy(_$, {
   apply(target, thisArg, args: Parameters<$Type>) {
