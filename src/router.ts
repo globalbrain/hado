@@ -12,13 +12,13 @@
  *     Copyright (c) 2024 Vercel, Inc.
  *     https://github.com/vercel/next.js/blob/main/license.md
  *     Relevant files:
- *       https://github.com/vercel/next.js/blob/efcec4c1e303848a5293cef6961be8f73fd5160b/packages/next/src/shared/lib/router/utils/sorted-routes.ts
+ *       https://github.com/vercel/next.js/blob/f4c1a406e420e5ee5c01040e642a2e2fcc97f72f/packages/next/src/shared/lib/router/utils/sorted-routes.ts
  *
  * - deno_std - MIT License
  *     Copyright 2018-2024 the Deno authors.
- *     https://github.com/denoland/deno_std/blob/main/LICENSE
+ *     https://github.com/denoland/std/blob/main/LICENSE
  *     Relevant files:
- *       https://github.com/denoland/deno_std/blob/main/http/file_server.ts
+ *       https://github.com/denoland/std/blob/49c117d2ef4626c4f3f061268f3adb0e4f083c5b/http/file_server.ts
  */
 
 import {
@@ -133,6 +133,10 @@ class UrlNode {
       if (segmentName.startsWith('[') && segmentName.endsWith(']')) {
         segmentName = segmentName.slice(1, -1)
         isOptional = true
+      }
+
+      if (segmentName.startsWith('…')) {
+        throw new Error(`Detected ellipsis ('…') at ('${segmentName}'). Did you mean ('...')?`)
       }
 
       if (segmentName.startsWith('...')) {
