@@ -1,3 +1,9 @@
+## [0.15.0](https://github.com/globalbrain/hado/compare/v0.14.0...v0.15.0) (2025-05-22)
+
+### Features
+
+- **router:** throw when ellipsis is used instead of three dots in segments ([328320c](https://github.com/globalbrain/hado/commit/328320c0151031dabf2ab573df87687bd381b356))
+
 ## [0.14.0](https://github.com/globalbrain/hado/compare/v0.13.0...v0.14.0) (2025-05-22)
 
 ### ⚠ BREAKING CHANGES
