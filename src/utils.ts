@@ -146,8 +146,7 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
  * @param arr The array of items to be processed into requests.
  * @param fn A function that maps each item in `arr` to a `Request` object.
  * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
- *
- * @returns An async generator yielding `ResponseOrError<Schema>` objects in the order results become available.
+ * @returns An async iterable iterator yielding `ResponseOrError<Schema>` objects as they become available.
  *
  * @throws {Error} If no pool key is provided or pool setup fails.
  *
