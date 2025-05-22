@@ -8,19 +8,17 @@
 /**
  * Credits:
  *
- * - ky - MIT License
- *     Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
- *     https://github.com/sindresorhus/ky/blob/main/license
- *
- * - ofetch - MIT License
- *     Copyright (c) Pooya Parsa <pooya@pi0.io>
- *     https://github.com/unjs/ofetch/blob/main/LICENSE
- *
  * - undici - MIT License
  *     Copyright (c) Matteo Collina and Undici contributors
  *     https://github.com/nodejs/undici/blob/main/LICENSE
  *     Relevant files:
  *       https://github.com/nodejs/undici/blob/5f11247b34510a3dc821da3c10d3cea0f39a7b13/lib/handler/retry-handler.js
+ *
+ * - deno_std - MIT License
+ *     Copyright 2018-2025 the Deno authors.
+ *     https://github.com/denoland/std/blob/main/LICENSE
+ *     Relevant files:
+ *       https://github.com/denoland/std/blob/89d4ba448c68a20216b753d16d26e81e80a8dd6a/async/pool.ts
  */
 
 import { delay, type ZodType } from '../deps.ts'
@@ -170,63 +168,55 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
  * }
  * ```
  */
-export async function* concurrentArrayFetcher<T, Schema extends ZodType | undefined = undefined>(
+export function concurrentArrayFetcher<T, Schema extends ZodType | undefined = undefined>(
   arr: T[],
   fn: (item: T) => Request,
   { key, maxAttempts = 5, timeout = 10_000, deadline = 300_000, schema, concurrency = 64 }: FetchOptions<Schema>,
-): AsyncGenerator<ResponseOrError<T, Schema>> {
+): AsyncIterableIterator<ResponseOrError<T, Schema>> {
   let pool = pools.get(key)
   if (!pool) pools.set(key, pool = new Semaphore(concurrency))
 
   const signal = AbortSignal.timeout(deadline)
 
-  const queue = [...arr]
-  const inProgress = new Set<Promise<void>>()
-
-  const runTask = async (item: T) => {
+  const runTask = async (source: T) => {
     if (signal.aborted) return
-    let result: ResponseOrError<T, Schema>
-
     try {
-      await pool.acquire()
-
-      const response = await _fetch(fn(item), { maxAttempts, timeout }, signal)
+      const response = await _fetch(fn(source), { maxAttempts, timeout }, signal)
       const data = schema ? await response.json().then((json) => schema.parseAsync(json)) : response
-
-      result = { source: item, success: true, data }
-
-      //
+      return { source, success: true as const, data }
     } catch (error) {
-      result = { source: item, success: false, error }
-
-      //
+      return { source, success: false as const, error }
     } finally {
       pool.release()
-      yieldResult(result!)
     }
   }
 
-  let yieldResult: (value: ResponseOrError<T, Schema>) => void = () => {}
+  const res = new PassThroughStream<ResponseOrError<T, Schema>>()
 
-  while (queue.length || inProgress.size) {
-    if (signal.aborted) {
-      inProgress.clear()
-      queue.length = 0
-      yieldResult({ source: undefined, success: false, error: signal.reason })
-      break
+  void (async () => {
+    const writer = res.writable.getWriter()
+    const executing: Array<Promise<void>> = []
+
+    for (const source of arr) {
+      if (signal.aborted) {
+        writer.write({ source: undefined, success: false, error: signal.reason })
+        break
+      }
+      await pool.acquire()
+      const p = runTask(source).then((res) => {
+        writer.write(res)
+      })
+      const e = p.then(() => {
+        executing.splice(executing.indexOf(e), 1)
+      })
+      executing.push(e)
     }
 
-    while (inProgress.size < concurrency && queue.length) {
-      const item = queue.shift()!
-      const task = (() => runTask(item))()
-      inProgress.add(task)
-      task.finally(() => inProgress.delete(task))
-    }
+    await Promise.all(executing)
+    writer.close()
+  })()
 
-    yield await new Promise((resolve) => {
-      yieldResult = resolve
-    })
-  }
+  return res.readable[Symbol.asyncIterator]()
 }
 
 // #endregion
@@ -250,7 +240,6 @@ async function _fetch(
   req: Request,
   { maxAttempts, timeout }: { maxAttempts: number; timeout: number },
   parentSignal?: AbortSignal,
-  pool?: Semaphore,
 ): Promise<Response> {
   if (!idempotentMethods.has(req.method)) maxAttempts = 1
   const maxRetryAfter = Date.now() + maxAttempts * timeout
@@ -259,8 +248,6 @@ async function _fetch(
 
   while (maxAttempts-- > 0) {
     try {
-      await pool?.acquire()
-
       const res = await deadline((signal) => {
         return fetch(req, { signal: AbortSignal.any([req.signal, signal, ...(parentSignal ? [parentSignal] : [])]) })
       }, timeout)
@@ -287,10 +274,6 @@ async function _fetch(
           if (wait > 0) await delay(wait, { signal: parentSignal }) // wait before retrying
         }
       }
-
-      //
-    } finally {
-      pool?.release()
     }
   }
 
@@ -306,6 +289,18 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number): Promis
   return p(c.signal).finally(() => {
     timeout.removeEventListener('abort', abort)
   })
+}
+
+class PassThroughStream<T> extends TransformStream<T, T> {
+  constructor() {
+    super({
+      transform(chunk, controller) {
+        if (chunk !== undefined) {
+          controller.enqueue(chunk)
+        }
+      },
+    })
+  }
 }
 
 // #endregion
