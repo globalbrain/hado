@@ -1,3 +1,17 @@
+## [0.14.0](https://github.com/globalbrain/hado/compare/v0.13.0...v0.14.0) (2025-05-22)
+
+### ⚠ BREAKING CHANGES
+
+- **utils:** `pool` is changed to `key` and is now required for both `fetchAll` and `concurrentArrayFetcher`
+
+### Bug Fixes
+
+- **utils:** pooling logic ([c564ef4](https://github.com/globalbrain/hado/commit/c564ef41a0d563d3425fe503120c1c7362c3340e))
+
+### Code Refactoring
+
+- **utils:** use `concurrentArrayFetcher` to implement `fetchAll` ([b357f69](https://github.com/globalbrain/hado/commit/b357f6956f23ac8ab00169ba4e3126d30ab571c4))
+
 ## [0.13.0](https://github.com/globalbrain/hado/compare/v0.12.1...v0.13.0) (2025-05-17)
 
 ### Features
