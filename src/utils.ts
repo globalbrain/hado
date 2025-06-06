@@ -247,9 +247,11 @@ async function _fetch(
 
   while (maxAttempts-- > 0) {
     try {
-      const res = await deadline((signal) => {
-        return fetch(req, { signal: AbortSignal.any([req.signal, signal, ...(parentSignal ? [parentSignal] : [])]) })
-      }, timeout)
+      const res = await deadline(
+        (signal) => fetch(req, { signal: AbortSignal.any([req.signal, signal]) }),
+        timeout,
+        parentSignal,
+      )
 
       if (res.ok) return res
       throw new FetchError(req, res)
@@ -279,9 +281,9 @@ async function _fetch(
   throw lastError
 }
 
-function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentSignal?: AbortSignal): Promise<T> {
   const c = new AbortController()
-  const timeout = AbortSignal.timeout(ms)
+  const timeout = AbortSignal.any([AbortSignal.timeout(ms), ...(parentSignal ? [parentSignal] : [])])
   const abort = () => c.abort(timeout.reason)
   if (timeout.aborted) abort()
   timeout.addEventListener('abort', abort, { once: true })
