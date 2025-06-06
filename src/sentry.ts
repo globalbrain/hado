@@ -14,7 +14,7 @@
  * ```
  */
 
-import type { Client, IntegrationFn, RequestEventData, SpanAttributes } from 'https://esm.sh/@sentry/core@9.22.0'
+import type { Client, IntegrationFn, RequestEventData, SpanAttributes } from 'https://esm.sh/@sentry/core@9.27.0'
 import {
   captureConsoleIntegration,
   captureException,
