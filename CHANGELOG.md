@@ -1,10 +1,4 @@
-## [0.15.2](https://github.com/globalbrain/hado/compare/v0.15.1...v0.15.2) (2025-06-06)
-
-### Bug Fixes
-
-- **utils/regression:** type inference not working with schema ([29ceea9](https://github.com/globalbrain/hado/commit/29ceea9f41447832b5c40cbf9c8aefbaa812713d))
-
-## [0.15.1](https://github.com/globalbrain/hado/compare/v0.15.0...v0.15.1) (2025-06-06)
+## [0.15.3](https://github.com/globalbrain/hado/compare/v0.15.2...v0.15.3) (2025-06-06)
 
 ### Bug Fixes
 
