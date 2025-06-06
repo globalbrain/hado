@@ -1,3 +1,9 @@
+## [0.15.1](https://github.com/globalbrain/hado/compare/v0.15.0...v0.15.1) (2025-06-06)
+
+### Bug Fixes
+
+- **utils/regression:** keep the body usable even after timeout ([b0b3491](https://github.com/globalbrain/hado/commit/b0b34917a4445f5cba8cffa886b8e617552303fe))
+
 ## [0.15.0](https://github.com/globalbrain/hado/compare/v0.14.0...v0.15.0) (2025-05-22)
 
 ### Features
