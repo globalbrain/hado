@@ -70,7 +70,7 @@ export type ResponseOrError<T, Schema extends ZodType | undefined> =
 /**
  * Options for {@link fetchAll}.
  */
-export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
+export type FetchOptions<Schema extends ZodType | undefined> = {
   /**
    * The pool key to use for rate limiting.
    */
