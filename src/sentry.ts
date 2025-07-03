@@ -62,6 +62,7 @@ import {
   init as sentryInit,
   requestDataIntegration,
   type RequestEventData,
+  SEMANTIC_ATTRIBUTE_SENTRY_OP,
   SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
   SEMANTIC_ATTRIBUTE_SENTRY_SOURCE,
   setHttpStatus,
@@ -73,18 +74,15 @@ export * from 'npm:@sentry/deno@^9.34.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
-const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
-const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
-const SEMANTIC_ATTRIBUTE_SENTRY_OP = 'sentry.op'
-
-const INTEGRATION_NAME = 'DenoServer'
+export const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
+export const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
 
 /**
  * Instruments `Deno.serve` to automatically create transactions and capture errors.
  */
 export const denoServerIntegration: IntegrationFn = () => {
   return {
-    name: INTEGRATION_NAME,
+    name: 'DenoServer',
     setupOnce() {
       instrumentDenoServe()
     },
@@ -94,7 +92,7 @@ export const denoServerIntegration: IntegrationFn = () => {
 /**
  * Instruments Deno.serve by patching it's options.
  */
-function instrumentDenoServe(): void {
+export function instrumentDenoServe(): void {
   Deno.serve = new Proxy(Deno.serve, {
     apply(serveTarget, serveThisArg, serveArgs: unknown[]) {
       const [arg1, arg2] = serveArgs
