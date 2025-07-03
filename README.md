@@ -37,6 +37,19 @@ This will restart the server on file changes and will watch for changes in the `
 
 You can also use the `--watch-hmr` flag instead of `--watch` to enable hot module reloading.
 
+If you want to use [`deno serve`](https://docs.deno.com/runtime/reference/cli/serve/), you'll need to update the code to export the handler function directly:
+
+```diff
+- Deno.serve({ port: 3000, handler })
++ export default { fetch: handler } satisfies Deno.ServeDefaultExport
+```
+
+Then you can run the server with:
+
+```sh
+DENO_ENV=development deno serve --watch --port 3000 --allow-env --allow-ffi --allow-read --allow-net server.ts
+```
+
 ## Routing
 
 Hado has a file-based router, so the directory structure will determine the routes. We follow the same conventions as Next.js:
