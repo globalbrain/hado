@@ -55,7 +55,14 @@
  *     https://github.com/getsentry/sentry-javascript/blob/develop/LICENSE
  */
 
-import type { Client, Integration, IntegrationFn, Options, SpanAttributes } from 'npm:@sentry/core@^9.34.0'
+import type {
+  Client,
+  Integration,
+  IntegrationFn,
+  Options,
+  RequestEventData,
+  SpanAttributes,
+} from 'npm:@sentry/core@^9.34.0'
 import {
   captureConsoleIntegration,
   captureException,
@@ -65,13 +72,13 @@ import {
   getDefaultIntegrations as sentryGetDefaultIntegrations,
   init as sentryInit,
   requestDataIntegration,
-  type RequestEventData,
   SEMANTIC_ATTRIBUTE_SENTRY_OP,
   SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
   SEMANTIC_ATTRIBUTE_SENTRY_SOURCE,
   setHttpStatus,
   startSpan,
   withIsolationScope,
+  zodErrorsIntegration,
 } from 'npm:@sentry/deno@^9.34.0'
 
 export * from 'npm:@sentry/deno@^9.34.0'
@@ -206,6 +213,7 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
  * - `denoServerIntegration`
  * - `captureConsoleIntegration` for levels `['warn', 'error']`
  * - `extraErrorDataIntegration`
+ * - `zodErrorsIntegration`
  */
 export function getDefaultIntegrations(_options: Options): Integration[] {
   const integrations = sentryGetDefaultIntegrations(_options)
@@ -215,6 +223,7 @@ export function getDefaultIntegrations(_options: Options): Integration[] {
     denoServerIntegration(),
     captureConsoleIntegration({ levels: ['warn', 'error'] }),
     extraErrorDataIntegration(),
+    zodErrorsIntegration(),
   ]
 }
 
