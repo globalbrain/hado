@@ -35,7 +35,7 @@ DENO_ENV=development deno run --watch --allow-env --allow-ffi --allow-read --all
 
 This will restart the server on file changes and will watch for changes in the `api` directory.
 
-You can also use the `--hmr` flag instead of `--watch` to enable hot module reloading.
+You can also use the `--watch-hmr` flag instead of `--watch` to enable hot module reloading.
 
 If you want to use [`deno serve`](https://docs.deno.com/runtime/reference/cli/serve/), you'll need to update the code to export the handler function directly:
 

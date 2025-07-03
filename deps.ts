@@ -4,5 +4,4 @@ export { serveDir, type ServeDirOptions, STATUS_CODE, STATUS_TEXT, type StatusCo
 export { toFileUrl } from 'jsr:@std/path@^1.1.1'
 export { normalize as posixNormalize } from 'jsr:@std/path@^1.1.1/posix/normalize'
 export { escape } from 'jsr:@std/regexp@^1.0.1'
-export { subscribe } from 'npm:@brc-dd/watcher@2.5.1-3'
 export type { ZodType } from 'npm:zod@^3.25.71'

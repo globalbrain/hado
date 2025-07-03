@@ -30,15 +30,12 @@ import {
   STATUS_CODE,
   STATUS_TEXT,
   type StatusCode,
-  subscribe,
   toFileUrl,
   walk,
 } from '../deps.ts'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
-const watchOpts = Object.freeze({
-  ignoreGlobs: [/^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/.source],
-})
+const ignore = /^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/
 
 type Awaitable<T> = T | Promise<T>
 type Params = Record<string, string | string[]>
@@ -318,10 +315,16 @@ export async function createRouter(
   }, 100)
 
   if (dev) {
-    const subscription = await subscribe(fsRoot, (_, events) => {
-      if (events.some((e) => e.type === 'create' || e.type === 'delete')) reloadRouter()
-    }, watchOpts)
-    addEventListener('unload', subscription.unsubscribe)
+    const watcher = Deno.watchFs(fsRoot)
+    addEventListener('unload', () => watcher.close())
+    ;(async () => {
+      for await (const event of watcher) {
+        if (
+          (event.kind === 'create' || event.kind === 'remove' || event.kind === 'rename') &&
+          event.paths.some((path) => !ignore.test(path))
+        ) reloadRouter()
+      }
+    })()
   }
 
   const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
