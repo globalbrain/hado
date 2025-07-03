@@ -2,16 +2,66 @@
  * @module sentry
  *
  * @description
- * Deno server integration for Sentry.
+ * To use this SDK, call the {@link init} function as early as possible in the
+ * main entry module. To set context information or send manual events, use the
+ * provided methods.
+ *
+ * @example
+ * ```ts
+ * import { init } from 'jsr:@globalbrain/hado/sentry'
+ *
+ * init({
+ *   dsn: '__DSN__',
+ *   // ...
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * import { addBreadcrumb } from 'jsr:@globalbrain/hado/sentry'
+ *
+ * addBreadcrumb({
+ *   message: 'My Breadcrumb',
+ *   // ...
+ * })
+ * ```
+ *
+ * @example
+ * ```ts
+ * import * as Sentry from 'jsr:@globalbrain/hado/sentry'
+ *
+ * Sentry.captureMessage('Hello, world!')
+ * Sentry.captureException(new Error('Good bye'))
+ * Sentry.captureEvent({
+ *   message: 'Manual',
+ *   stacktrace: [
+ *     // ...
+ *   ],
+ * })
+ * ```
+ *
+ * @see {@link DenoOptions} for documentation on configuration options.
  */
 
-import type { Client, IntegrationFn, RequestEventData, SpanAttributes } from 'npm:@sentry/core@^9.34.0'
+/**
+ * Credits:
+ *
+ * - sentry-javascript - MIT License
+ *     Copyright (c) 2012 Functional Software, Inc. dba Sentry
+ *     https://github.com/getsentry/sentry-javascript/blob/develop/LICENSE
+ */
+
+import type { Client, Integration, IntegrationFn, Options, SpanAttributes } from 'npm:@sentry/core@^9.34.0'
 import {
   captureConsoleIntegration,
   captureException,
   continueTrace,
+  type DenoOptions,
+  extraErrorDataIntegration,
+  getDefaultIntegrations as sentryGetDefaultIntegrations,
   init as sentryInit,
   requestDataIntegration,
+  type RequestEventData,
   SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN,
   SEMANTIC_ATTRIBUTE_SENTRY_SOURCE,
   setHttpStatus,
@@ -19,15 +69,15 @@ import {
   withIsolationScope,
 } from 'npm:@sentry/deno@^9.34.0'
 
-export * as Sentry from 'npm:@sentry/deno@^9.34.0'
+export * from 'npm:@sentry/deno@^9.34.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 
-export const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
-export const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
-export const SEMANTIC_ATTRIBUTE_SENTRY_OP = 'sentry.op'
+const SEMANTIC_ATTRIBUTE_HTTP_REQUEST_METHOD = 'http.request.method'
+const SEMANTIC_ATTRIBUTE_URL_FULL = 'url.full'
+const SEMANTIC_ATTRIBUTE_SENTRY_OP = 'sentry.op'
 
-export const INTEGRATION_NAME = 'DenoServer'
+const INTEGRATION_NAME = 'DenoServer'
 
 /**
  * Instruments `Deno.serve` to automatically create transactions and capture errors.
@@ -44,7 +94,7 @@ export const denoServerIntegration: IntegrationFn = () => {
 /**
  * Instruments Deno.serve by patching it's options.
  */
-export function instrumentDenoServe(): void {
+function instrumentDenoServe(): void {
   Deno.serve = new Proxy(Deno.serve, {
     apply(serveTarget, serveThisArg, serveArgs: unknown[]) {
       const [arg1, arg2] = serveArgs
@@ -146,23 +196,44 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
 }
 
 /**
- * Opinionated initialization of the Sentry Deno SDK.
- * You can directly import `denoServerIntegration` if you want to customize the setup.
+ * Returns the default integrations for the Deno SDK.
+ * @see https://docs.sentry.io/platforms/javascript/guides/deno/configuration/integrations/#integrations
+ *
+ * On top of that list, it adds:
+ * - `requestDataIntegration`
+ * - `denoServerIntegration`
+ * - `captureConsoleIntegration` for levels `['warn', 'error']`
+ * - `extraErrorDataIntegration`
+ */
+export function getDefaultIntegrations(_options: Options): Integration[] {
+  const integrations = sentryGetDefaultIntegrations(_options)
+  return [
+    ...integrations,
+    requestDataIntegration(),
+    denoServerIntegration(),
+    captureConsoleIntegration({ levels: ['warn', 'error'] }),
+    extraErrorDataIntegration(),
+  ]
+}
+
+/**
+ * Initializes the Sentry Deno SDK.
  */
 export function init(
-  dsn: string | undefined = Deno.env.get('SENTRY_DSN'),
-  environment: string | undefined = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
+  {
+    dsn = Deno.env.get('SENTRY_DSN'),
+    environment = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
+    defaultIntegrations,
+    ...options
+  }: DenoOptions = {},
 ): Client | undefined {
   if (!dsn) return undefined
   return sentryInit({
     dsn,
     environment,
-    integrations: [
-      requestDataIntegration(),
-      denoServerIntegration(),
-      captureConsoleIntegration({ levels: ['warn', 'error'] }),
-    ],
-    ignoreErrors: [/^Listening on/],
+    ...options,
+    defaultIntegrations: defaultIntegrations ?? getDefaultIntegrations({}),
+    ignoreErrors: [/^Listening on/, ...(options.ignoreErrors || [])],
   })
 }
 
