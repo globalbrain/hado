@@ -1,5 +1,5 @@
 /**
- * @module sentry
+ * @module Sentry
  *
  * @description
  * To use this SDK, call the {@link init} function as early as possible in the
@@ -11,9 +11,13 @@
  * import { init } from 'jsr:@globalbrain/hado/sentry'
  *
  * init({
- *   dsn: '__DSN__',
- *   // ...
+ *   dsn: '__DSN__', // if left empty, will use `SENTRY_DSN` env var
+ *   environment: 'production', // if left empty, will use `SENTRY_ENVIRONMENT` or `DENO_ENV` env var
+ *   // other options...
  * })
+ *
+ * // ^ better to do this inside a separate script, and pass it as `--preload` to Deno
+ * // https://deno.com/blog/v2.4#modify-the-deno-environment-with-the-new---preload-flag
  * ```
  *
  * @example
