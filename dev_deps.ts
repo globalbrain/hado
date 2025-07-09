@@ -23,7 +23,7 @@ export { getAvailablePort } from 'jsr:@std/net@^1.0.4/get-available-port'
 export { dirname, fromFileUrl, relative, resolve, toFileUrl } from 'jsr:@std/path@^1.1.1'
 export { escape } from 'jsr:@std/regexp@^1.0.1'
 export * as SemVer from 'jsr:@std/semver@^1.0.5'
-export { build } from 'npm:esbuild@^0.25.5'
+export { build } from 'npm:esbuild@0.25.5'
 export { default as tsid } from 'npm:unplugin-isolated-decl@^0.14.5/esbuild'
 
 export const $ = new Proxy(_$, {

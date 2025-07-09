@@ -21,7 +21,8 @@
  *       https://github.com/denoland/std/blob/89d4ba448c68a20216b753d16d26e81e80a8dd6a/async/pool.ts
  */
 
-import { delay, type ZodType } from '../deps.ts'
+import { delay } from 'jsr:@std/async@^1.0.13/delay'
+import type { ZodType } from 'npm:zod@^3.25.76'
 
 // #region Pooling
 
