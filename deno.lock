@@ -40,7 +40,6 @@
     "jsr:@std/path@^1.0.6": "1.1.1",
     "jsr:@std/path@^1.1.1": "1.1.1",
     "jsr:@std/path@~1.0.6": "1.0.9",
-    "jsr:@std/regexp@^1.0.1": "1.0.1",
     "jsr:@std/semver@^1.0.5": "1.0.5",
     "jsr:@std/streams@^1.0.10": "1.0.10",
     "jsr:@std/text@~1.0.7": "1.0.15",
@@ -194,9 +193,6 @@
       "dependencies": [
         "jsr:@std/internal@^1.0.9"
       ]
-    },
-    "@std/regexp@1.0.1": {
-      "integrity": "5179d823465085c5480dafb44438466e83c424fadc61ba31f744050ecc0f596d"
     },
     "@std/semver@1.0.5": {
       "integrity": "529f79e83705714c105ad0ba55bec0f9da0f24d2f726b6cc1c15e505cc2c0624"

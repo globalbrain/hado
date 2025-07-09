@@ -27,7 +27,6 @@ import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.0.19/file-serve
 import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.19/status'
 import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.1/posix/normalize'
 import { toFileUrl } from 'jsr:@std/path@^1.1.1/to-file-url'
-import { escape } from 'jsr:@std/regexp@^1.0.1/escape'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 const ignore = /^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/
@@ -322,7 +321,7 @@ export async function createRouter(
     })()
   }
 
-  const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
+  const urlRootRE = new RegExp(`^/?${RegExp.escape(urlRoot)}(?:/|$)`)
 
   function getHandler(file: string, method: string): Promise<Handler | null> {
     return handlerCache.use(

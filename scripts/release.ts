@@ -25,7 +25,6 @@ import {
   type ConfirmOptions,
   cyan,
   dim,
-  escape,
   green,
   Input as _Input,
   type InputOptions,
@@ -288,7 +287,9 @@ await step('Creating a new release', async () => {
     .replace(/^.*(?:\:\/\/|@)/, '').replace(/(?:\.git|#).*$/, '').replace(/:\/?/, '/')
 
   const changelog = await Deno.readTextFile('CHANGELOG.md')
-  const match = changelog.match(new RegExp(`## \\[${escape(newVersion)}\\]\\((.*?)\\).*?\n([\\s\\S]*?)(?=\n## |$)`))
+  const match = changelog.match(
+    new RegExp(`## \\[${RegExp.escape(newVersion)}\\]\\((.*?)\\).*?\n([\\s\\S]*?)(?=\n## |$)`),
+  )
 
   const url = newGithubReleaseUrl({
     body: `${match?.[2]?.trim() ?? ''}\n\n**Full Changelog**: ${match?.[1]?.trim() ?? ''}`,
