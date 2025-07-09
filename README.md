@@ -30,12 +30,25 @@ This will serve the `api` directory as an API on `http://localhost:3000/api`.
 To run the server in development mode, you can use the following command:
 
 ```sh
-DENO_ENV=development deno run --watch --allow-env --allow-ffi --allow-read --allow-net server.ts
+DENO_ENV=development deno run --watch --allow-env --allow-ffi --allow-net --allow-read server.ts
 ```
 
 This will restart the server on file changes and will watch for changes in the `api` directory.
 
 You can also use the `--watch-hmr` flag instead of `--watch` to enable hot module reloading.
+
+If you want to use [`deno serve`](https://docs.deno.com/runtime/reference/cli/serve/), you'll need to update the code to export the handler function directly:
+
+```diff
+- Deno.serve({ port: 3000, handler })
++ export default { fetch: handler } satisfies Deno.ServeDefaultExport
+```
+
+Then you can run the server with:
+
+```sh
+DENO_ENV=development deno serve --watch --port 3000 --allow-env --allow-ffi --allow-net --allow-read server.ts
+```
 
 ## Routing
 

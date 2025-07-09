@@ -21,24 +21,16 @@
  *       https://github.com/denoland/std/blob/49c117d2ef4626c4f3f061268f3adb0e4f083c5b/http/file_server.ts
  */
 
-import {
-  debounce,
-  escape,
-  posixNormalize,
-  serveDir,
-  type ServeDirOptions,
-  STATUS_CODE,
-  STATUS_TEXT,
-  type StatusCode,
-  subscribe,
-  toFileUrl,
-  walk,
-} from '../deps.ts'
+import { debounce } from 'jsr:@std/async@^1.0.13/debounce'
+import { walk } from 'jsr:@std/fs@^1.0.19/walk'
+import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.0.19/file-server'
+import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.19/status'
+import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.1/posix/normalize'
+import { toFileUrl } from 'jsr:@std/path@^1.1.1/to-file-url'
+import { escape } from 'jsr:@std/regexp@^1.0.1/escape'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
-const watchOpts = Object.freeze({
-  ignoreGlobs: [/^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/.source],
-})
+const ignore = /^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/
 
 type Awaitable<T> = T | Promise<T>
 type Params = Record<string, string | string[]>
@@ -318,10 +310,16 @@ export async function createRouter(
   }, 100)
 
   if (dev) {
-    const subscription = await subscribe(fsRoot, (_, events) => {
-      if (events.some((e) => e.type === 'create' || e.type === 'delete')) reloadRouter()
-    }, watchOpts)
-    addEventListener('unload', subscription.unsubscribe)
+    const watcher = Deno.watchFs(fsRoot)
+    addEventListener('unload', () => watcher.close())
+    ;(async () => {
+      for await (const event of watcher) {
+        if (
+          (event.kind === 'create' || event.kind === 'remove' || event.kind === 'rename') &&
+          event.paths.some((path) => !ignore.test(path))
+        ) reloadRouter()
+      }
+    })()
   }
 
   const urlRootRE = new RegExp(`^/?${escape(urlRoot)}(?:/|$)`)
@@ -401,4 +399,5 @@ export function createStandardResponse(status: StatusCode, init?: ResponseInit):
  * - don't destroy whole tree on single file change
  * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433), add services docs
  * - store static routes in a map instead of tree for faster lookup
+ * - auto enable dev mode when hmr is enabled (https://github.com/denoland/deno/issues/28770)
  */
