@@ -19,10 +19,16 @@
  *     https://github.com/denoland/std/blob/main/LICENSE
  *     Relevant files:
  *       https://github.com/denoland/std/blob/89d4ba448c68a20216b753d16d26e81e80a8dd6a/async/pool.ts
+ *
+ * - standard-schema - MIT License
+ *     Copyright (c) 2024 Fabian Hiller
+ *     https://github.com/standard-schema/standard-schema/blob/main/packages/utils/LICENSE
+ *     Relevant files:
+ *       https://github.com/standard-schema/standard-schema/blob/a9d5e3522259f70938a5b0c125a19d671c975fd9/packages/utils/src/SchemaError/SchemaError.ts
  */
 
+import type { StandardSchemaV1 } from 'jsr:@standard-schema/spec@1.0.0'
 import { delay } from 'jsr:@std/async@^1.0.13/delay'
-import type { ZodType } from 'npm:zod@^3.25.76'
 
 // #region Pooling
 
@@ -58,20 +64,23 @@ const pools = new Map<string, Semaphore>() // FIXME: memory leak - never release
  * If a schema is provided, the parsed and validated response body is returned.\
  * Otherwise, the `Response` object is returned.
  */
-export type OutputOrResponse<Schema extends ZodType | undefined> = Schema extends ZodType ? Schema['_output'] : Response
+export type OutputOrResponse<Schema extends StandardSchemaV1 | undefined> = Schema extends StandardSchemaV1
+  ? StandardSchemaV1.InferOutput<Schema>
+  : Response
+
 /**
  * Type of the items yielded by {@link concurrentArrayFetcher}.\
  * If a schema is provided, the parsed and validated response body is returned.\
  * `source` can be `undefined` in certain cases, like if the deadline is exceeded.
  */
-export type ResponseOrError<T, Schema extends ZodType | undefined> =
+export type ResponseOrError<T, Schema extends StandardSchemaV1 | undefined> =
   | { source: T; success: true; data: OutputOrResponse<Schema>; error?: never }
   | { source?: T; success: false; data?: never; error: unknown }
 
 /**
  * Options for {@link fetchAll}.
  */
-export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
+export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined> = {
   /**
    * The pool key to use for rate limiting.
    */
@@ -104,6 +113,27 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
 }
 
 /**
+ * A schema error with useful information.
+ */
+export class SchemaError extends Error {
+  /**
+   * The schema issues.
+   */
+  public readonly issues: ReadonlyArray<StandardSchemaV1.Issue>
+
+  /**
+   * Creates a schema error with useful information.
+   *
+   * @param issues The schema issues.
+   */
+  constructor(issues: ReadonlyArray<StandardSchemaV1.Issue>) {
+    super(issues[0]?.message)
+    this.name = 'SchemaError'
+    this.issues = issues
+  }
+}
+
+/**
  * Fetch multiple requests concurrently.\
  * Automatically handles rate limiting, retries, and timeouts.
  *
@@ -123,7 +153,7 @@ export type FetchOptions<Schema extends ZodType | undefined = undefined> = {
  * @param options The fetch options.
  * @returns The responses. (or parsed and validated JSON data if options.schema is provided)
  */
-export async function fetchAll<Schema extends ZodType | undefined = undefined>(
+export async function fetchAll<Schema extends StandardSchemaV1 | undefined = undefined>(
   requests: Request[],
   options: FetchOptions<Schema>,
 ): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
@@ -168,7 +198,7 @@ export async function fetchAll<Schema extends ZodType | undefined = undefined>(
  * }
  * ```
  */
-export function concurrentArrayFetcher<T, Schema extends ZodType | undefined = undefined>(
+export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | undefined = undefined>(
   arr: T[],
   fn: (item: T) => Request,
   { key, maxAttempts = 5, timeout = 10_000, deadline = 300_000, schema, concurrency = 64 }: FetchOptions<Schema>,
@@ -182,7 +212,13 @@ export function concurrentArrayFetcher<T, Schema extends ZodType | undefined = u
     if (signal.aborted) return
     try {
       const response = await _fetch(fn(source), { maxAttempts, timeout }, signal)
-      const data = schema ? await response.json().then((json) => schema.parseAsync(json)) : response
+      // deno-lint-ignore no-explicit-any
+      let data: any = response
+      if (schema) {
+        const result = await response.json().then((json) => schema['~standard'].validate(json))
+        if (result.issues) throw new SchemaError(result.issues)
+        data = result.value
+      }
       return { source, success: true as const, data }
     } catch (error) {
       return { source, success: false as const, error }
@@ -306,3 +342,8 @@ class PassThroughStream<T> extends TransformStream<T, T> {
 }
 
 // #endregion
+
+/**
+ * TODO:
+ * - remove vendored SchemaError when jsr version is fixed (https://github.com/denoland/deno/issues/30052)
+ */

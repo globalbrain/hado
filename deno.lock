@@ -12,6 +12,7 @@
     "jsr:@david/which@~0.4.1": "0.4.1",
     "jsr:@deno/graph@~0.96.2": "0.96.2",
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
+    "jsr:@standard-schema/spec@1.0.0": "1.0.0",
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/assert@~1.0.6": "1.0.13",
     "jsr:@std/async@^1.0.13": "1.0.13",
@@ -47,8 +48,7 @@
     "npm:@sentry/deno@^9.36.0": "9.36.0",
     "npm:@types/node@*": "22.15.15",
     "npm:esbuild@0.25.5": "0.25.5",
-    "npm:unplugin-isolated-decl@~0.14.5": "0.14.5",
-    "npm:zod@^3.25.76": "3.25.76"
+    "npm:unplugin-isolated-decl@~0.14.5": "0.14.5"
   },
   "jsr": {
     "@cliffy/ansi@1.0.0-rc.8": {
@@ -116,6 +116,9 @@
         "jsr:@std/encoding@^1.0.5",
         "jsr:@std/path@^1.0.6"
       ]
+    },
+    "@standard-schema/spec@1.0.0": {
+      "integrity": "4f20bbcf34e92b92f8c01589b958abc7c87385fa9a96170cecdc643d4d5737c0"
     },
     "@std/assert@1.0.13": {
       "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
@@ -673,9 +676,6 @@
     },
     "webpack-virtual-modules@0.6.2": {
       "integrity": "sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ=="
-    },
-    "zod@3.25.76": {
-      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="
     }
   },
   "remote": {
