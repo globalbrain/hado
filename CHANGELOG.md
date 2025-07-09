@@ -1,3 +1,9 @@
+## [0.17.0](https://github.com/globalbrain/hado/compare/v0.16.0...v0.17.0) (2025-07-09)
+
+### Features
+
+- **utils:** support [standard schema](https://standardschema.dev/) ([93d37a2](https://github.com/globalbrain/hado/commit/93d37a2a626652f29d632d2543ef9535876659fd))
+
 ## [0.16.0](https://github.com/globalbrain/hado/compare/v0.15.3...v0.16.0) (2025-07-09)
 
 ### ⚠ BREAKING CHANGES
