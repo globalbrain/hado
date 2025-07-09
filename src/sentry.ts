@@ -251,4 +251,5 @@ export function init(
 /**
  * TODO:
  * - remove when https://github.com/getsentry/sentry-javascript/pull/12460 is merged
+ * - widen zod error integration to support standard schema errors
  */
