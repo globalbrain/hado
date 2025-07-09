@@ -30,7 +30,7 @@ This will serve the `api` directory as an API on `http://localhost:3000/api`.
 To run the server in development mode, you can use the following command:
 
 ```sh
-DENO_ENV=development deno run --watch --allow-env --allow-ffi --allow-read --allow-net server.ts
+DENO_ENV=development deno run --watch --allow-env --allow-ffi --allow-net --allow-read server.ts
 ```
 
 This will restart the server on file changes and will watch for changes in the `api` directory.
@@ -47,7 +47,7 @@ If you want to use [`deno serve`](https://docs.deno.com/runtime/reference/cli/se
 Then you can run the server with:
 
 ```sh
-DENO_ENV=development deno serve --watch --port 3000 --allow-env --allow-ffi --allow-read --allow-net server.ts
+DENO_ENV=development deno serve --watch --port 3000 --allow-env --allow-ffi --allow-net --allow-read server.ts
 ```
 
 ## Routing

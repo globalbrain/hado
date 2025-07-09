@@ -399,4 +399,5 @@ export function createStandardResponse(status: StatusCode, init?: ResponseInit):
  * - don't destroy whole tree on single file change
  * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433), add services docs
  * - store static routes in a map instead of tree for faster lookup
+ * - auto enable dev mode when hmr is enabled (https://github.com/denoland/deno/issues/28770)
  */
