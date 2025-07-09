@@ -1,6 +1,6 @@
 {
   "name": "@globalbrain/hado",
-  "version": "0.15.3",
+  "version": "0.16.0",
   "exports": {
     "./router": "./src/router.ts",
     "./sentry": "./src/sentry.ts",

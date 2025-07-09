@@ -1,3 +1,15 @@
+## [0.16.0](https://github.com/globalbrain/hado/compare/v0.15.3...v0.16.0) (2025-07-09)
+
+### ⚠ BREAKING CHANGES
+
+- Support for Deno <2.4 is dropped.
+- The Sentry module is now published to JSR. The exports now closely mimic the official module.
+- While not really a breaking change, but Hado now uses the built-in Deno FsWatcher. It isn't robust like `chokidar` and `@parcel/watcher` and can emit unnecessary or wrong events. So, ignore any extra _Reloading router_ logs.
+
+### Features
+
+- deno 2.4 support ([#1](https://github.com/globalbrain/hado/issues/1)) ([15372c0](https://github.com/globalbrain/hado/commit/15372c032390698c8986c7de9e7d91fcaf30a4fb))
+
 ## [0.15.3](https://github.com/globalbrain/hado/compare/v0.15.2...v0.15.3) (2025-06-06)
 
 ### Bug Fixes
