@@ -1,14 +1,8 @@
 import { $ as _$, type $Type } from 'jsr:@david/dax@^0.43.2'
 
 export { parseFromJson } from 'https://deno.land/x/import_map@v0.21.0/mod.ts'
-export {
-  Confirm,
-  type ConfirmOptions,
-  Input,
-  type InputOptions,
-  Select,
-  type SelectOptions,
-} from 'jsr:@cliffy/prompt@^1.0.0-rc.8'
+export { Confirm, Input, Select } from 'jsr:@cliffy/prompt@^1.0.0-rc.8'
+export type { ConfirmOptions, InputOptions, SelectOptions } from 'jsr:@cliffy/prompt@^1.0.0-rc.8'
 export { as, ensure, is } from 'jsr:@core/unknownutil@^4.3.0'
 export { createGraph, load as loadGraph } from 'jsr:@deno/graph@^0.96.2'
 export type { DependencyJson, ResolvedDependency } from 'jsr:@deno/graph@^0.96.2/types'
