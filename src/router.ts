@@ -23,8 +23,8 @@
 
 import { debounce } from 'jsr:@std/async@^1.0.13/debounce'
 import { walk } from 'jsr:@std/fs@^1.0.19/walk'
-import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.0.19/file-server'
-import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.19/status'
+import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.0.20/file-server'
+import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.20/status'
 import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.1/posix/normalize'
 import { toFileUrl } from 'jsr:@std/path@^1.1.1/to-file-url'
 

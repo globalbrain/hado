@@ -355,12 +355,12 @@ async function _resolveLatestVersion(
         return { ...dependency, version: 'v' + SemVer.format(latest) }
       }
       const response = await fetch(
-        addSeparator(dependency.protocol) + dependency.name + dependency.path,
-        { method: 'HEAD' },
+        addSeparator(dependency.protocol) + dependency.name,
+        { method: 'GET' },
       )
       await response.arrayBuffer()
       if (!response.redirected) break
-      const redirected = parseDependency(response.url)
+      const redirected = parseDependency(response.url + dependency.path)
       if (!redirected.version || _isPreRelease(redirected.version)) break
       const latest = redirected as UpdatedDependency
       return { ...latest, path: dependency.path === '/' ? '/' : latest.path }
