@@ -29,7 +29,7 @@ import {
 
 const supportedProtocols = ['npm:', 'jsr:', 'http:', 'https:'] as const
 
-const isNpmPackageMeta = is.ObjectOf({ 'dist-tags': is.ObjectOf({ latest: is.String }) })
+const isNpmPackageMeta = is.ObjectOf({ 'dist-tags': is.RecordOf(is.String, is.String) })
 
 const isJsrPackageMeta = is.ObjectOf({
   versions: is.RecordOf(is.ObjectOf({ yanked: as.Optional(is.Boolean) }), is.String),
@@ -322,9 +322,20 @@ async function _resolveLatestVersion(
       const pkg = ensure(await response.json(), isNpmPackageMeta, {
         message: `Invalid response from NPM registry: ${response.url}`,
       })
-      const latest = pkg['dist-tags'].latest
-      if (_isPreRelease(latest)) break
-      return { ...dependency, version: latest }
+      const latest = SemVer.tryParse(pkg['dist-tags'].latest!)
+      const current = SemVer.tryParse(pkg['dist-tags'][dependency.version || 'latest'] || dependency.version!)
+      if (!latest || _isPreRelease(latest) || !current) break
+      if (SemVer.compare(latest, current) > 0) return { ...dependency, version: SemVer.format(latest) }
+      const tag = current?.prerelease?.[0]
+      if (typeof tag === 'string') {
+        for (const version of Object.values(pkg['dist-tags'])) {
+          const semver = SemVer.tryParse(version)
+          if (semver?.prerelease?.[0] === tag && SemVer.compare(semver, current) > 0) {
+            return { ...dependency, version: SemVer.format(semver) }
+          }
+        }
+      }
+      return dependency as UpdatedDependency
     }
     case 'jsr:': {
       const response = await fetch(`https://jsr.io/${dependency.name}/meta.json`)
@@ -378,9 +389,9 @@ async function _resolveLatestVersion(
  * isPreRelease("0.1.0-alpha.1"); // -> true
  * ```
  */
-function isPreRelease(version: string | SemVer.SemVer): boolean {
+function isPreRelease(version: string | SemVer.SemVer | undefined): boolean {
   const parsed = typeof version === 'string' ? SemVer.tryParse(version) : version
-  return parsed !== undefined && parsed.prerelease !== undefined && parsed.prerelease.length > 0
+  return (parsed?.prerelease?.length ?? -1) > 0
 }
 
 function isGithub(dependency: Dependency): boolean {
