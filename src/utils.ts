@@ -103,23 +103,26 @@ export type Fx = {
    * ```ts
    * import { z } from 'npm:zod'
    *
-   * const EmployeeSchema = z.object({
+   * const TodoSchema = z.object({
    *   id: z.number(),
-   *   employee_name: z.string(),
-   *   employee_salary: z.number(),
-   *   employee_age: z.number(),
+   *   todo: z.string(),
+   *   completed: z.boolean(),
+   *   userId: z.number(),
    * })
    *
    * const requests = [
-   *   new Request('https://dummy.restapiexample.com/api/v1/employee/1'),
-   *   new Request('https://dummy.restapiexample.com/api/v1/employee/2'),
+   *   new Request('https://dummyjson.com/todos/1'),
+   *   new Request('https://dummyjson.com/todos/2'),
    * ]
-   * const { values, errors } = await fx.all(requests, { key: 'example-api' })
+   * const { values, errors } = await fx.all(requests, {
+   *   key: 'todos-api',
+   *   schema: TodoSchema,
+   * })
    *
    * if (errors) {
    *   console.error('Some requests failed:', errors)
    * } else {
-   *   console.log('All employee data:', values)
+   *   console.log('All todos:', values)
    * }
    * ```
    *
@@ -145,24 +148,24 @@ export type Fx = {
    * ```ts
    * import { z } from 'npm:zod'
    *
-   * const EmployeeSchema = z.object({
+   * const TodoSchema = z.object({
    *   id: z.number(),
-   *   employee_name: z.string(),
-   *   employee_salary: z.number(),
-   *   employee_age: z.number(),
+   *   todo: z.string(),
+   *   completed: z.boolean(),
+   *   userId: z.number(),
    * })
    *
-   * const userIds = ['1', '2', '3']
+   * const todoIds = [1, 2, 3]
    *
    * for await (const result of fx.iter(
-   *   userIds,
-   *   (id) => new Request(`https://dummy.restapiexample.com/api/v1/employee/${id}`),
-   *   { key: 'example-api', schema: EmployeeSchema },
+   *   todoIds,
+   *   (id) => new Request(`https://dummyjson.com/todos/${id}`),
+   *   { key: 'todos-api', schema: TodoSchema },
    * )) {
    *   if (result.success) {
-   *     console.log('User data:', result.data)
+   *     console.log('Todo:', result.data)
    *   } else {
-   *     console.error('Fetch error for user:', result.source, result.error)
+   *     console.error('Fetch error for id:', result.source, result.error)
    *   }
    * }
    * ```
@@ -410,41 +413,26 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
  * All functions automatically handle rate limiting, retries, and timeouts.\
  * The pool is shared across all calls using the same `key`.
  *
- * @example Fetching a single request
- *
- * ```ts
- * const request = new Request('https://dummy.restapiexample.com/api/v1/employee/1')
- * const result = await fx(request, { key: 'employee-api' })
- *
- * if (result.success) {
- *   const data = await result.data.json()
- *   console.log('Employee data:', data)
- * } else {
- *   console.error('Fetch error:', result.error)
- * }
- * ```
- *
- * @example Fetching a single request with schema validation
+ * @example
  *
  * ```ts
  * import { z } from 'npm:zod'
  *
- * const employeeSchema = z.object({
+ * const TodoSchema = z.object({
  *   id: z.number(),
- *   employee_name: z.string(),
- *   employee_salary: z.number(),
- *   employee_age: z.number(),
+ *   todo: z.string(),
+ *   completed: z.boolean(),
+ *   userId: z.number(),
  * })
  *
- * const request = new Request('https://dummy.restapiexample.com/api/v1/employee/1')
+ * const request = new Request('https://dummyjson.com/todos/1')
  * const result = await fx(request, {
- *   key: 'employee-api',
- *   schema: EmployeeSchema,
+ *   key: 'todos-api',
+ *   schema: TodoSchema,
  * })
  *
  * if (result.success) {
- *   // 'result.data' is now strongly typed based on EmployeeSchema
- *   console.log('Employee data:', result.data.employee_name)
+ *   console.log('Todo title:', result.data.todo)
  * } else {
  *   console.error('Fetch error:', result.error)
  * }
@@ -456,9 +444,9 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
  * @returns A promise resolving to a single result object.
  */
 const fx: Fx = async (request, options) => {
-  const iterator = concurrentArrayFetcher([request], (r) => r, options)
-  for await (const result of iterator) return result
-  throw new Error('Unexpected end of iterator')
+  const result = await concurrentArrayFetcher([request], (r) => r, options).next()
+  if (result.done) throw new Error('Unexpected end of iterator')
+  return result.value
 }
 fx.all = fetchAll
 fx.iter = concurrentArrayFetcher
