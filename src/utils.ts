@@ -166,7 +166,10 @@ const pools = new Map<string, Semaphore>()
 const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
 const transientStatusCodes = new Set([408, 429, 500, 502, 503, 504])
 
-async function fetchAll<Schema extends StandardSchemaV1 | undefined = undefined>(
+/**
+ * @deprecated Use `fx.all` instead.
+ */
+export async function fetchAll<Schema extends StandardSchemaV1 | undefined = undefined>(
   requests: Request[],
   options: FetchOptions<Schema>,
 ): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
@@ -177,7 +180,10 @@ async function fetchAll<Schema extends StandardSchemaV1 | undefined = undefined>
   return errors.length ? { values, errors } : { values }
 }
 
-function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | undefined = undefined>(
+/**
+ * @deprecated Use `fx.iter` instead.
+ */
+export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | undefined = undefined>(
   arr: T[],
   fn: (item: T) => Request,
   { key, maxAttempts = 5, timeout = 10_000, deadline = 300_000, schema, concurrency = 64 }: FetchOptions<Schema>,
