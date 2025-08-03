@@ -64,7 +64,7 @@ import type {
   Options,
   RequestEventData,
   SpanAttributes,
-} from 'npm:@sentry/core@^9.43.0'
+} from 'npm:@sentry/core@^10.0.0'
 import {
   captureConsoleIntegration,
   captureException,
@@ -81,7 +81,7 @@ import {
   startSpan,
   withIsolationScope,
   zodErrorsIntegration,
-} from 'npm:@sentry/deno@^9.43.0'
+} from 'npm:@sentry/deno@^10.0.0'
 
 export * from 'npm:@sentry/deno@^9.43.0'
 

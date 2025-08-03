@@ -43,11 +43,14 @@
     "jsr:@std/semver@^1.0.5": "1.0.5",
     "jsr:@std/streams@^1.0.10": "1.0.10",
     "jsr:@std/text@~1.0.7": "1.0.15",
-    "npm:@sentry/core@^9.43.0": "9.43.0",
-    "npm:@sentry/deno@^9.43.0": "9.43.0",
+    "npm:@sentry/core@10": "10.0.0",
+    "npm:@sentry/deno@10": "10.0.0",
+    "npm:@sentry/deno@^9.43.0": "9.44.0",
     "npm:@types/node@*": "22.15.15",
     "npm:esbuild@0.25.5": "0.25.5",
-    "npm:unplugin-isolated-decl@~0.14.6": "0.14.6"
+    "npm:unplugin-isolated-decl@~0.14.6": "0.14.6",
+    "npm:zod@*": "4.0.14",
+    "npm:zod@4.0.14": "4.0.14"
   },
   "jsr": {
     "@cliffy/ansi@1.0.0-rc.8": {
@@ -517,13 +520,22 @@
       "os": ["win32"],
       "cpu": ["x64"]
     },
-    "@sentry/core@9.43.0": {
-      "integrity": "sha512-xuvERSUkSNBAldIlgihX3fz+JkcaAPvg0HulPtv3BH9qrKqvataeQ8TiTnqiRC7kWzF7EcxhQJ6WJRl/r3aH3w=="
+    "@sentry/core@10.0.0": {
+      "integrity": "sha512-UvkPzWVcXVSB6GOmETlEXlBumquFWCve0VnR2SqQIAyJPcj7mO6BvYrpuyit4c4XXaChaJe+bPZ6+4XQbUHnAA=="
     },
-    "@sentry/deno@9.43.0": {
-      "integrity": "sha512-aSrhVK4CQSo//fHfRKPQZ0eqq5hv3tIxbB1t2CXkk24c7y9hVxo/ZAdoUgp48qut86yQiXT16xC6CAmbo83xHg==",
+    "@sentry/core@9.44.0": {
+      "integrity": "sha512-U+KBNGgq/eXIj226CPtRk+n5dx0q1xGVvbLbyfAyeek9C/wxQ3f+mvqeVqF9cx8FfrWIOeDM1F8ISH5uRkjjQg=="
+    },
+    "@sentry/deno@10.0.0": {
+      "integrity": "sha512-EYdCdT3nvAM0oMQ64TwdABWWTKhsdgkPk5T7veoqH7fSl+n5hUSGxdM6bxvmszJRURe4G2aXiYDd4s4D9CsYJQ==",
       "dependencies": [
-        "@sentry/core"
+        "@sentry/core@10.0.0"
+      ]
+    },
+    "@sentry/deno@9.44.0": {
+      "integrity": "sha512-Ws8iK6U5ONvjoZvNszLmt4YqtdsMWTjLdKOAn9iRzhgxxjPquQlY3T4PNSu7srZ5cufksiZe5Vr2vHhlE1AZ4w==",
+      "dependencies": [
+        "@sentry/core@9.44.0"
       ]
     },
     "@tybys/wasm-util@0.10.0": {
@@ -672,6 +684,9 @@
     },
     "webpack-virtual-modules@0.6.2": {
       "integrity": "sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ=="
+    },
+    "zod@4.0.14": {
+      "integrity": "sha512-nGFJTnJN6cM2v9kXL+SOBq3AtjQby3Mv5ySGFof5UGRHrRioSJ5iG680cYNjE/yWk671nROcpPj4hAS8nyLhSw=="
     }
   },
   "remote": {
