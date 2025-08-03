@@ -166,6 +166,17 @@ const pools = new Map<string, Semaphore>()
 const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
 const transientStatusCodes = new Set([408, 429, 500, 502, 503, 504])
 
+async function fetchAll<Schema extends StandardSchemaV1 | undefined = undefined>(
+  requests: Request[],
+  options: FetchOptions<Schema>,
+): Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }> {
+  const values: OutputOrResponse<Schema>[] = []
+  const errors: unknown[] = []
+  ;(await Array.fromAsync(concurrentArrayFetcher(requests, (req) => req, options)))
+    .forEach((r) => r.success ? values.push(r.data) : errors.push(r.error))
+  return errors.length ? { values, errors } : { values }
+}
+
 function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | undefined = undefined>(
   arr: T[],
   fn: (item: T) => Request,
@@ -290,20 +301,9 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
 const fx: Fx = async (input, options) => {
   const iterator = concurrentArrayFetcher([input], (r) => r, options)
   for await (const result of iterator) return result
-  throw new Error('Unreachable')
+  throw new Error('Unexpected end of iterator')
 }
-
-fx.all = async <Schema extends StandardSchemaV1 | undefined = undefined>(
-  inputs: Request[],
-  options: FetchOptions<Schema>,
-) => {
-  const values: OutputOrResponse<Schema>[] = []
-  const errors: unknown[] = []
-  ;(await Array.fromAsync(concurrentArrayFetcher(inputs, (r) => r, options)))
-    .forEach((r) => r.success ? values.push(r.data) : errors.push(r.error))
-  return errors.length ? { values, errors } : { values }
-}
-
+fx.all = fetchAll
 fx.iter = concurrentArrayFetcher
 
 export { fx }
