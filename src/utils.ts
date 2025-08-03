@@ -83,7 +83,13 @@ export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined
   concurrency?: number
 }
 
+/**
+ * Type of the main fetch wrapper function {@link fx}.
+ */
 export type Fx = {
+  /**
+   * {@link fx}
+   */
   <Schema extends StandardSchemaV1 | undefined = undefined>(
     input: Request,
     options: FetchOptions<Schema>,
