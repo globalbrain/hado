@@ -1,12 +1,12 @@
 /**
- * @module Sentry
- *
- * @description
  * To use this SDK, call the {@link init} function as early as possible in the
  * main entry module. To set context information or send manual events, use the
  * provided methods.
  *
+ * @module Sentry
+ *
  * @example
+ *
  * ```ts
  * import { init } from 'jsr:@globalbrain/hado/sentry'
  *
@@ -21,6 +21,7 @@
  * ```
  *
  * @example
+ *
  * ```ts
  * import { addBreadcrumb } from 'jsr:@globalbrain/hado/sentry'
  *
@@ -31,6 +32,7 @@
  * ```
  *
  * @example
+ *
  * ```ts
  * import * as Sentry from 'jsr:@globalbrain/hado/sentry'
  *
@@ -206,6 +208,7 @@ function instrumentDenoServeOptions(handler: RawHandler): RawHandler {
 
 /**
  * Returns the default integrations for the Deno SDK.
+ *
  * @see https://docs.sentry.io/platforms/javascript/guides/deno/configuration/integrations/#integrations
  *
  * On top of that list, it adds:
@@ -230,14 +233,12 @@ export function getDefaultIntegrations(_options: Options): Integration[] {
 /**
  * Initializes the Sentry Deno SDK.
  */
-export function init(
-  {
-    dsn = Deno.env.get('SENTRY_DSN'),
-    environment = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
-    defaultIntegrations,
-    ...options
-  }: DenoOptions = {},
-): Client | undefined {
+export function init({
+  dsn = Deno.env.get('SENTRY_DSN'),
+  environment = Deno.env.get('SENTRY_ENVIRONMENT') || Deno.env.get('DENO_ENV'),
+  defaultIntegrations,
+  ...options
+}: DenoOptions = {}): Client | undefined {
   if (!dsn) return undefined
   return sentryInit({
     dsn,
