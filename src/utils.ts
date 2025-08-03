@@ -109,7 +109,7 @@ export type Fx = {
 /**
  * An error that occurs during fetching requests.
  *
- * This error is thrown when the fetch request fails.
+ * This error is thrown when the fetch request fails.\
  * It contains the original request and the response object.
  */
 export class FetchError extends Error {
@@ -122,7 +122,7 @@ export class FetchError extends Error {
 /**
  * An error that occurs during schema validation.
  *
- * This error is thrown when the response body does not conform to the expected schema.
+ * This error is thrown when the response body does not conform to the expected schema.\
  * It contains an array of issues that describe the validation errors.
  */
 export class SchemaError extends Error {
@@ -135,7 +135,7 @@ export class SchemaError extends Error {
 /**
  * A passthrough stream that simply forwards chunks without modification.
  *
- * This is useful for creating a stream that does not alter the data,
+ * This is useful for creating a stream that does not alter the data,\
  * allowing it to be used in a pipeline without affecting the data flow.
  */
 class PassThroughStream<T> extends TransformStream<T, T> {
@@ -151,7 +151,7 @@ class PassThroughStream<T> extends TransformStream<T, T> {
 /**
  * A semaphore implementation for controlling concurrency.
  *
- * This class allows a limited number of concurrent operations to proceed.
+ * This class allows a limited number of concurrent operations to proceed.\
  * It maintains a queue of waiting operations and releases them when capacity is available.
  */
 class Semaphore {
