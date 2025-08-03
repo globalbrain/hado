@@ -134,6 +134,9 @@ export class FetchError extends Error {
 
 /**
  * A passthrough stream that simply forwards chunks without modification.
+ *
+ * This is useful for creating a stream that does not alter the data,
+ * allowing it to be used in a pipeline without affecting the data flow.
  */
 class PassThroughStream<T> extends TransformStream<T, T> {
   constructor() {
