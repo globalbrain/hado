@@ -432,6 +432,7 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
  * })
  *
  * if (result.success) {
+ *   // 'result.data' is now strongly typed based on TodoSchema
  *   console.log('Todo title:', result.data.todo)
  * } else {
  *   console.error('Fetch error:', result.error)
