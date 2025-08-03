@@ -32,14 +32,26 @@ import { delay } from 'jsr:@std/async@^1.0.14/delay'
 
 // #region Types
 
+/**
+ * Type of the values returned by {@link fx.all}.\
+ * If a schema is provided, the parsed and validated response body is returned.\
+ * Otherwise, the `Response` object is returned.
+ */
 export type OutputOrResponse<Schema extends StandardSchemaV1 | undefined> = Schema extends StandardSchemaV1
   ? StandardSchemaV1.InferOutput<Schema>
   : Response
 
+/**
+ * Type of the items yielded by {@link fx.iter}.\
+ * If a schema is provided, the parsed and validated response body is returned.
+ */
 export type ResponseOrError<T, Schema extends StandardSchemaV1 | undefined> =
   | { source: T; success: true; data: OutputOrResponse<Schema>; error?: never }
   | { source: T; success: false; data?: never; error: unknown }
 
+/**
+ * Options for {@link fx}.
+ */
 export interface FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined> {
   /**
    * The pool key to use for rate limiting.
