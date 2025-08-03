@@ -89,11 +89,79 @@ export type Fx = {
     options: FetchOptions<Schema>,
   ): Promise<ResponseOrError<Request, Schema>>
 
+  /**
+   * Fetch multiple requests concurrently.
+   *
+   * This function takes an array of `Request` objects, fetches them all in
+   * parallel (with concurrency control), and returns a promise for an array of
+   * all results. It's the equivalent of `Promise.all` for this fetch wrapper.
+   *
+   * @example ;```ts const requests = [ new
+   * Request('[https://dummy.restapiexample.com/api/v1/employee/1](https://dummy.restapiexample.com/api/v1/employee/1)'),
+   * new
+   * Request('[https://dummy.restapiexample.com/api/v1/employee/2](https://dummy.restapiexample.com/api/v1/employee/2)'),
+   * ];
+   *
+   * Const { values, errors } = await fx.all(requests, { key: 'employee-api' });
+   *
+   * If (errors) { console.error('Some requests failed:', errors); }
+   *
+   * Const data = await Promise.all(values.map((res) => res.json()));
+   * console.log('All employee data:', data);
+   *
+   * @param inputs An array of `Request` objects to fetch.
+   * @param options Fetch options including a required pool key and optional
+   *   schema, concurrency, timeout, and retry settings.
+   * @returns A promise resolving to an array of result objects.
+   */
   all: <Schema extends StandardSchemaV1 | undefined = undefined>(
     inputs: Request[],
     options: FetchOptions<Schema>,
   ) => Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }>
 
+  /**
+   * Fetch multiple requests concurrently, yielding results as they become
+   * available.
+   *
+   * This function provides an `AsyncIterableIterator` that yields results for
+   * each request as soon as it completes, preserving high throughput and allowing
+   * you to process data as it streams in. This is useful for a large number of
+   * requests where you don't want to wait for all of them to finish before
+   * processing.
+   *
+   * @example
+   *
+   * ```ts
+   * const userIds = ['1', '2', '3']
+   *
+   * for await (const result of fx.iter(
+   *   userIds,
+   *   (id) => new Request(`/api/user/${id}`),
+   *   {
+   *     key: 'user-api',
+   *     concurrency: 10
+   *   }
+   * )) {
+   *   if (result.success) {
+   *     const data = await result.data.json()
+   *     console.log('User data:', data)
+   *   } else {
+   *     console.error('Fetch error:', result.error)
+   *   }
+   * }
+   * ```
+   *
+   * @template T The item type of the input array.
+   * @template Schema An optional schema to validate the response body (for JSON
+   *   responses).
+   * @param arr The array of items to be processed into requests.
+   * @param toRequest A function that maps each item in `arr` to a `Request`
+   *   object.
+   * @param options Fetch options including a required pool key and optional
+   *   schema, concurrency, timeout, and retry settings.
+   * @returns An async iterable iterator yielding {@link ResponseOrError} objects
+   *   as they become available.
+   */
   iter: <T, Schema extends StandardSchemaV1 | undefined = undefined>(
     input: T[],
     toRequest: (item: T) => Request,
@@ -391,76 +459,7 @@ const fx: Fx = async (input, options) => {
   throw new Error('Unexpected end of iterator')
 }
 
-/**
- * Fetch multiple requests concurrently.
- *
- * This function takes an array of `Request` objects, fetches them all in
- * parallel (with concurrency control), and returns a promise for an array of
- * all results. It's the equivalent of `Promise.all` for this fetch wrapper.
- *
- * @example ;```ts const requests = [ new
- * Request('[https://dummy.restapiexample.com/api/v1/employee/1](https://dummy.restapiexample.com/api/v1/employee/1)'),
- * new
- * Request('[https://dummy.restapiexample.com/api/v1/employee/2](https://dummy.restapiexample.com/api/v1/employee/2)'),
- * ];
- *
- * Const { values, errors } = await fx.all(requests, { key: 'employee-api' });
- *
- * If (errors) { console.error('Some requests failed:', errors); }
- *
- * Const data = await Promise.all(values.map((res) => res.json()));
- * console.log('All employee data:', data);
- *
- * @param inputs An array of `Request` objects to fetch.
- * @param options Fetch options including a required pool key and optional
- *   schema, concurrency, timeout, and retry settings.
- * @returns A promise resolving to an array of result objects.
- */
 fx.all = fetchAll
-
-/**
- * Fetch multiple requests concurrently, yielding results as they become
- * available.
- *
- * This function provides an `AsyncIterableIterator` that yields results for
- * each request as soon as it completes, preserving high throughput and allowing
- * you to process data as it streams in. This is useful for a large number of
- * requests where you don't want to wait for all of them to finish before
- * processing.
- *
- * @example
- *
- * ```ts
- * const userIds = ['1', '2', '3']
- *
- * for await (const result of fx.iter(
- *   userIds,
- *   (id) => new Request(`/api/user/${id}`),
- *   {
- *     key: 'user-api',
- *     concurrency: 10
- *   }
- * )) {
- *   if (result.success) {
- *     const data = await result.data.json()
- *     console.log('User data:', data)
- *   } else {
- *     console.error('Fetch error:', result.error)
- *   }
- * }
- * ```
- *
- * @template T The item type of the input array.
- * @template Schema An optional schema to validate the response body (for JSON
- *   responses).
- * @param arr The array of items to be processed into requests.
- * @param toRequest A function that maps each item in `arr` to a `Request`
- *   object.
- * @param options Fetch options including a required pool key and optional
- *   schema, concurrency, timeout, and retry settings.
- * @returns An async iterable iterator yielding {@link ResponseOrError} objects
- *   as they become available.
- */
 fx.iter = concurrentArrayFetcher
 
 export { fx }
