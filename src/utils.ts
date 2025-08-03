@@ -408,7 +408,7 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
  *
  * - `fx`: For a single fetch request.
  * - `fx.all`: For fetching multiple requests concurrently and returning an array of all results.
- * - `fx.iter`: For fetching multiple requests concurrently and returning an async iterator that yields results as they complete.
+ * - `fx.iter`: For fetching multiple requests concurrently, yielding results as they become available.
  *
  * All functions automatically handle rate limiting, retries, and timeouts.\
  * The pool is shared across all calls using the same `key`.
