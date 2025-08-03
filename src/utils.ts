@@ -52,7 +52,7 @@ export type ResponseOrError<T, Schema extends StandardSchemaV1 | undefined> =
 /**
  * Options for {@link fx}.
  */
-export interface FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined> {
+export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined> = {
   /**
    * The pool key to use for rate limiting.
    */
@@ -84,7 +84,7 @@ export interface FetchOptions<Schema extends StandardSchemaV1 | undefined = unde
   concurrency?: number
 }
 
-export interface Fx {
+export type Fx = {
   <Schema extends StandardSchemaV1 | undefined = undefined>(
     input: Request,
     options: FetchOptions<Schema>,
