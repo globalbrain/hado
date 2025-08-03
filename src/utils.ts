@@ -107,19 +107,6 @@ export type Fx = {
 // #region Classes
 
 /**
- * An error that occurs during schema validation.
- *
- * This error is thrown when the response body does not conform to the expected schema.
- * It contains an array of issues that describe the validation errors.
- */
-export class SchemaError extends Error {
-  constructor(readonly issues: ReadonlyArray<StandardSchemaV1.Issue>) {
-    super(issues[0]?.message)
-    this.name = 'SchemaError'
-  }
-}
-
-/**
  * An error that occurs during fetching requests.
  *
  * This error is thrown when the fetch request fails.
@@ -129,6 +116,19 @@ export class FetchError extends Error {
   constructor(readonly request: Request, readonly response: Response) {
     super(`[${request.method}] ${request.url} - ${response.status} ${response.statusText}`)
     this.name = 'FetchError'
+  }
+}
+
+/**
+ * An error that occurs during schema validation.
+ *
+ * This error is thrown when the response body does not conform to the expected schema.
+ * It contains an array of issues that describe the validation errors.
+ */
+export class SchemaError extends Error {
+  constructor(readonly issues: ReadonlyArray<StandardSchemaV1.Issue>) {
+    super(issues[0]?.message)
+    this.name = 'SchemaError'
   }
 }
 
