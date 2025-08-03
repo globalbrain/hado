@@ -91,10 +91,89 @@ export type Fx = {
     request: Request,
     options: FetchOptions<Schema>,
   ): Promise<ResponseOrError<Request, Schema>>
+
+  /**
+   * Fetch multiple requests concurrently.
+   *
+   * This function takes an array of `Request` objects, fetches them all in parallel
+   * (with concurrency control), and returns a promise for an array of all results.
+   *
+   * @example
+   *
+   * ```ts
+   * import { z } from 'npm:zod'
+   *
+   * const EmployeeSchema = z.object({
+   *   id: z.number(),
+   *   employee_name: z.string(),
+   *   employee_salary: z.number(),
+   *   employee_age: z.number(),
+   * })
+   *
+   * const requests = [
+   *   new Request('https://dummy.restapiexample.com/api/v1/employee/1'),
+   *   new Request('https://dummy.restapiexample.com/api/v1/employee/2'),
+   * ]
+   * const { values, errors } = await fx.all(requests, { key: 'example-api' })
+   *
+   * if (errors) {
+   *   console.error('Some requests failed:', errors)
+   * } else {
+   *   console.log('All employee data:', values)
+   * }
+   * ```
+   *
+   * @template Schema An optional schema to validate the response body (for JSON responses).
+   * @param requests An array of `Request` objects to fetch.
+   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+   * @returns A promise resolving to an array of result objects.
+   */
   all: <Schema extends StandardSchemaV1 | undefined = undefined>(
     requests: Request[],
     options: FetchOptions<Schema>,
   ) => Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }>
+
+  /**
+   * Fetch multiple requests concurrently, yielding results as they become available.
+   *
+   * This function provides an `AsyncIterableIterator` that yields results for each request as soon as it completes,
+   * preserving high throughput and allowing you to process data as it streams in.
+   * This is useful for a large number of requests where you don't want to wait for all of them to finish before processing.
+   *
+   * @example
+   *
+   * ```ts
+   * import { z } from 'npm:zod'
+   *
+   * const EmployeeSchema = z.object({
+   *   id: z.number(),
+   *   employee_name: z.string(),
+   *   employee_salary: z.number(),
+   *   employee_age: z.number(),
+   * })
+   *
+   * const userIds = ['1', '2', '3']
+   *
+   * for await (const result of fx.iter(
+   *   userIds,
+   *   (id) => new Request(`https://dummy.restapiexample.com/api/v1/employee/${id}`),
+   *   { key: 'example-api', schema: EmployeeSchema },
+   * )) {
+   *   if (result.success) {
+   *     console.log('User data:', result.data)
+   *   } else {
+   *     console.error('Fetch error for user:', result.source, result.error)
+   *   }
+   * }
+   * ```
+   *
+   * @template T The item type of the input array.
+   * @template Schema An optional schema to validate the response body (for JSON responses).
+   * @param items The array of items to be processed into requests.
+   * @param toRequest A function that maps each item in `arr` to a `Request` object.
+   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+   * @returns An async iterable iterator yielding {@link ResponseOrError} objects as they become available.
+   */
   iter: <T, Schema extends StandardSchemaV1 | undefined = undefined>(
     items: T[],
     toRequest: (item: T) => Request,
@@ -319,6 +398,63 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
 
 // #region Wrapper
 
+/**
+ * A fetch wrapper with advanced features like pooling, retries, and timeouts.
+ *
+ * It provides three main functions for different use cases:
+ *
+ * - `fx`: For a single fetch request.
+ * - `fx.all`: For fetching multiple requests concurrently and returning an array of all results.
+ * - `fx.iter`: For fetching multiple requests concurrently and returning an async iterator that yields results as they complete.
+ *
+ * All functions automatically handle rate limiting, retries, and timeouts.\
+ * The pool is shared across all calls using the same `key`.
+ *
+ * @example Fetching a single request
+ *
+ * ```ts
+ * const request = new Request('https://dummy.restapiexample.com/api/v1/employee/1')
+ * const result = await fx(request, { key: 'employee-api' })
+ *
+ * if (result.success) {
+ *   const data = await result.data.json()
+ *   console.log('Employee data:', data)
+ * } else {
+ *   console.error('Fetch error:', result.error)
+ * }
+ * ```
+ *
+ * @example Fetching a single request with schema validation
+ *
+ * ```ts
+ * import { z } from 'npm:zod'
+ *
+ * const employeeSchema = z.object({
+ *   id: z.number(),
+ *   employee_name: z.string(),
+ *   employee_salary: z.number(),
+ *   employee_age: z.number(),
+ * })
+ *
+ * const request = new Request('https://dummy.restapiexample.com/api/v1/employee/1')
+ * const result = await fx(request, {
+ *   key: 'employee-api',
+ *   schema: EmployeeSchema,
+ * })
+ *
+ * if (result.success) {
+ *   // 'result.data' is now strongly typed based on EmployeeSchema
+ *   console.log('Employee data:', result.data.employee_name)
+ * } else {
+ *   console.error('Fetch error:', result.error)
+ * }
+ * ```
+ *
+ * @template Schema An optional schema to validate the response body (for JSON responses).
+ * @param request The request object to fetch.
+ * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+ * @returns A promise resolving to a single result object.
+ */
 const fx: Fx = async (request, options) => {
   const iterator = concurrentArrayFetcher([request], (r) => r, options)
   for await (const result of iterator) return result
