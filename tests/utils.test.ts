@@ -24,12 +24,13 @@ class Server {
   }
 }
 
-const TodoSchema = z.object({
-  id: z.number(),
-  todo: z.string(),
-  completed: z.boolean(),
-  userId: z.number(),
-})
+const baseOptions = {
+  key: 'todos',
+  schema: z.object({
+    id: z.number(),
+    todo: z.string(),
+  }),
+}
 
 Deno.test('utils', async (t) => {
   // #region Setup
@@ -43,17 +44,15 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Test', completed: false, userId: 1 }),
+            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }),
           ),
         )
 
         const request = new Request('https://example.com/todos/1')
-        const options = { key: 'todos-api', schema: TodoSchema }
-
-        const result = await fx(request, options)
+        const result = await fx(request, baseOptions)
 
         assert(result.success)
-        assertEquals(result.data.todo, 'Test')
+        assertEquals(result.data.todo, 'Todo 1')
       }),
     )
 
@@ -68,9 +67,7 @@ Deno.test('utils', async (t) => {
         )
 
         const request = new Request('https://example.com/todos/999')
-        const options = { key: 'todos-api' }
-
-        const result = await fx(request, options)
+        const result = await fx(request, baseOptions)
 
         assert(!result.success)
         assertInstanceOf(result.error, FetchError)
@@ -89,14 +86,12 @@ Deno.test('utils', async (t) => {
           ),
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Test', completed: false, userId: 1 }),
+            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }),
           ),
         )
 
         const request = new Request('https://example.com/todos/1')
-        const options = { key: 'todos-api', maxAttempts: 2 }
-
-        const result = await fx(request, options)
+        const result = await fx(request, { ...baseOptions, maxAttempts: 2 })
 
         assert(result.success)
       }),
@@ -108,14 +103,12 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 'invalid', todo: 123, completed: false, userId: 1 }),
+            () => HttpResponse.json({ id: 'invalid', todo: 123 }),
           ),
         )
 
         const request = new Request('https://example.com/todos/1')
-        const options = { key: 'todos-api', schema: TodoSchema }
-
-        const result = await fx(request, options)
+        const result = await fx(request, baseOptions)
 
         assert(!result.success)
         assertInstanceOf(result.error, SchemaError)
@@ -131,15 +124,13 @@ Deno.test('utils', async (t) => {
             'https://example.com/todos/1',
             async () => {
               await delay(100) // Simulate a long response
-              return HttpResponse.json({ id: 1, todo: 'Test', completed: false, userId: 1 })
+              return HttpResponse.json({ id: 1, todo: 'Todo 1' })
             },
           ),
         )
 
         const request = new Request('https://example.com/todos/1')
-        const options = { key: 'todos-api', deadline: 50 } // Set a short deadline
-
-        const result = await fx(request, options)
+        const result = await fx(request, { ...baseOptions, deadline: 50 }) // Set a short deadline
 
         assert(!result.success)
         assertInstanceOf(result.error, Error)
@@ -167,9 +158,8 @@ Deno.test('utils', async (t) => {
           new Request('https://example.com/todos/1'),
           new Request('https://example.com/todos/2'),
         ]
-        const options = { key: 'todos-api', schema: z.object({ id: z.number(), todo: z.string() }) }
 
-        const { values, errors } = await fx.all(requests, options)
+        const { values, errors } = await fx.all(requests, baseOptions)
 
         assertEquals(values.length, 2)
         assert(!errors)
@@ -196,9 +186,8 @@ Deno.test('utils', async (t) => {
           new Request('https://example.com/todos/1'),
           new Request('https://example.com/todos/999'),
         ]
-        const options = { key: 'todos-api' }
 
-        const { values, errors } = await fx.all(requests, options)
+        const { values, errors } = await fx.all(requests, baseOptions)
 
         assertEquals(values.length, 1)
         assertEquals(errors?.length, 1)
@@ -240,10 +229,9 @@ Deno.test('utils', async (t) => {
           new Request('https://example.com/todos/2'),
           new Request('https://example.com/todos/3'),
         ]
-        const options = { key: 'todos-api-concurrency', concurrency: 2 }
 
         const startTime = Date.now()
-        await fx.all(requests, options)
+        await fx.all(requests, { ...baseOptions, concurrency: 2 })
         const endTime = Date.now()
 
         const elapsedTime = endTime - startTime
@@ -266,28 +254,27 @@ Deno.test('utils', async (t) => {
             'https://example.com/todos/1',
             async () => {
               await delay(50)
-              return HttpResponse.json({ id: 1 })
+              return HttpResponse.json({ id: 1, todo: 'Todo 1' })
             },
           ),
           http.get(
             'https://example.com/todos/2',
             async () => {
               await delay(10)
-              return HttpResponse.json({ id: 2 })
+              return HttpResponse.json({ id: 2, todo: 'Todo 2' })
             },
           ),
           http.get(
             'https://example.com/todos/3',
             async () => {
               await delay(30)
-              return HttpResponse.json({ id: 3 })
+              return HttpResponse.json({ id: 3, todo: 'Todo 3' })
             },
           ),
         )
 
-        const options = { key: 'todos-api-iter', concurrency: 3, schema: z.object({ id: z.number() }) }
         const toRequest = (item: number) => new Request(`https://example.com/todos/${item}`)
-        const iterator = fx.iter(items, toRequest, options)
+        const iterator = fx.iter(items, toRequest, { ...baseOptions, concurrency: 3 })
 
         const results: number[] = []
         for await (const result of iterator) {
@@ -309,7 +296,7 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1 }), // Success
+            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }), // Success
           ),
           http.get(
             'https://example.com/todos/2',
@@ -317,13 +304,12 @@ Deno.test('utils', async (t) => {
           ),
           http.get(
             'https://example.com/todos/3',
-            () => HttpResponse.json({ id: 3 }), // Success
+            () => HttpResponse.json({ id: 3, todo: 'Todo 3' }), // Success
           ),
         )
 
-        const options = { key: 'todos-api-iter-err', schema: z.object({ id: z.number() }) }
         const toRequest = (id: number) => new Request(`https://example.com/todos/${id}`)
-        const iterator = fx.iter(items, toRequest, options)
+        const iterator = fx.iter(items, toRequest, baseOptions)
 
         const successes: number[] = []
         const errors: unknown[] = []
