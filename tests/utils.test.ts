@@ -3,7 +3,7 @@ import { setupServer, type SetupServerApi } from 'npm:msw@2.10.4/node'
 import { assert, assertEquals, assertInstanceOf, z } from '../dev_deps.ts'
 import { FetchError, fx, SchemaError } from '../src/utils.ts'
 
-class ServerManager {
+class Server {
   #server: SetupServerApi
 
   constructor() {
@@ -15,8 +15,12 @@ class ServerManager {
     this.#server.close()
   }
 
-  get server() {
-    return this.#server
+  get boundary() {
+    return this.#server.boundary.bind(this.#server)
+  }
+
+  get use() {
+    return this.#server.use.bind(this.#server)
   }
 }
 
@@ -29,8 +33,7 @@ const TodoSchema = z.object({
 
 Deno.test('utils', async (t) => {
   // #region Setup
-  using serverManager = new ServerManager()
-  const server = serverManager.server
+  using server = new Server()
   // #endregion
 
   await t.step('fx', async (t) => {
