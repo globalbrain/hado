@@ -1,3 +1,9 @@
+## [0.18.0](https://github.com/globalbrain/hado/compare/v0.17.3...v0.18.0) (2025-08-04)
+
+### Features
+
+- **utils:** extended fetch - `fx` ([#2](https://github.com/globalbrain/hado/issues/2)) ([79d55fa](https://github.com/globalbrain/hado/commit/79d55fa13ac902647275bd66cffd3d4f062e36a0))
+
 ## [0.17.3](https://github.com/globalbrain/hado/compare/v0.17.2...v0.17.3) (2025-07-30)
 
 ## [0.17.2](https://github.com/globalbrain/hado/compare/v0.17.1...v0.17.2) (2025-07-28)
