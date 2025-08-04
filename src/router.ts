@@ -1,8 +1,7 @@
 /**
- * @module router
- *
- * @description
  * A file-system based router.
+ *
+ * @module router
  */
 
 /**
@@ -265,6 +264,7 @@ class UrlNode {
  * Creates a file-system based router.
  *
  * @example
+ *
  * ```ts
  * const { handler } = await createRouter({
  *   fsRoot: fromFileUrl(new URL('./api', import.meta.url)),
@@ -375,14 +375,16 @@ export async function createRouter(
 
 /**
  * Creates a standard response with the given status code.
- * @param status The status code.
- * @param init The response init.
- * @returns The response.
  *
  * @example
+ *
  * ```ts
  * const response = createStandardResponse(STATUS_CODE.NotFound)
  * ```
+ *
+ * @param status The status code.
+ * @param init The response init.
+ * @returns The response.
  */
 export function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
   const statusText = STATUS_TEXT[status]

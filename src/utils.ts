@@ -1,8 +1,7 @@
 /**
- * @module utils
- *
- * @description
  * A collection of utility functions.
+ *
+ * @module utils
  */
 
 /**
@@ -30,37 +29,10 @@
 import type { StandardSchemaV1 } from 'jsr:@standard-schema/spec@1.0.0'
 import { delay } from 'jsr:@std/async@^1.0.14/delay'
 
-// #region Pooling
-
-class Semaphore {
-  #capacity: number
-  #queue: (() => void)[] = []
-
-  constructor(capacity: number) {
-    this.#capacity = capacity
-  }
-
-  // deno-lint-ignore require-await
-  async acquire() {
-    if (this.#capacity > 0) this.#capacity--
-    else return new Promise<void>((resolve) => this.#queue.push(resolve))
-  }
-
-  release() {
-    const resolve = this.#queue.shift()
-    if (resolve) resolve()
-    else this.#capacity++
-  }
-}
-
-const pools = new Map<string, Semaphore>() // FIXME: memory leak - never released
-
-// #endregion
-
-// #region Wrapper
+// #region Types
 
 /**
- * Type of the values returned by {@link fetchAll}.\
+ * Type of the values returned by {@link fx.all}.\
  * If a schema is provided, the parsed and validated response body is returned.\
  * Otherwise, the `Response` object is returned.
  */
@@ -69,16 +41,15 @@ export type OutputOrResponse<Schema extends StandardSchemaV1 | undefined> = Sche
   : Response
 
 /**
- * Type of the items yielded by {@link concurrentArrayFetcher}.\
- * If a schema is provided, the parsed and validated response body is returned.\
- * `source` can be `undefined` in certain cases, like if the deadline is exceeded.
+ * Type of the items yielded by {@link fx.iter}.\
+ * If a schema is provided, the parsed and validated response body is returned.
  */
 export type ResponseOrError<T, Schema extends StandardSchemaV1 | undefined> =
   | { source: T; success: true; data: OutputOrResponse<Schema>; error?: never }
-  | { source?: T; success: false; data?: never; error: unknown }
+  | { source: T; success: false; data?: never; error: unknown }
 
 /**
- * Options for {@link fetchAll}.
+ * Options for {@link fx}.
  */
 export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined> = {
   /**
@@ -113,45 +84,187 @@ export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined
 }
 
 /**
- * A schema error with useful information.
+ * Type of the main fetch wrapper function {@link fx}.
  */
-export class SchemaError extends Error {
-  /**
-   * The schema issues.
-   */
-  public readonly issues: ReadonlyArray<StandardSchemaV1.Issue>
+export type Fx = {
+  <Schema extends StandardSchemaV1 | undefined = undefined>(
+    request: Request,
+    options: FetchOptions<Schema>,
+  ): Promise<ResponseOrError<Request, Schema>>
 
   /**
-   * Creates a schema error with useful information.
+   * Fetch multiple requests concurrently.
    *
-   * @param issues The schema issues.
+   * This function takes an array of `Request` objects, fetches them all in parallel
+   * (with concurrency control), and returns a promise for an array of all results.
+   *
+   * @example
+   *
+   * ```ts
+   * import { z } from 'npm:zod'
+   *
+   * const TodoSchema = z.object({
+   *   id: z.number(),
+   *   todo: z.string(),
+   *   completed: z.boolean(),
+   *   userId: z.number(),
+   * })
+   *
+   * const requests = [
+   *   new Request('https://dummyjson.com/todos/1'),
+   *   new Request('https://dummyjson.com/todos/2'),
+   * ]
+   * const { values, errors } = await fx.all(requests, {
+   *   key: 'todos-api',
+   *   schema: TodoSchema,
+   * })
+   *
+   * if (errors) {
+   *   console.error('Some requests failed:', errors)
+   * } else {
+   *   console.log('All todos:', values)
+   * }
+   * ```
+   *
+   * @template Schema An optional schema to validate the response body (for JSON responses).
+   * @param requests An array of `Request` objects to fetch.
+   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+   * @returns A promise resolving to an array of result objects.
    */
-  constructor(issues: ReadonlyArray<StandardSchemaV1.Issue>) {
-    super(issues[0]?.message)
-    this.name = 'SchemaError'
-    this.issues = issues
+  all: <Schema extends StandardSchemaV1 | undefined = undefined>(
+    requests: Request[],
+    options: FetchOptions<Schema>,
+  ) => Promise<{ values: OutputOrResponse<Schema>[]; errors?: unknown[] }>
+
+  /**
+   * Fetch multiple requests concurrently, yielding results as they become available.
+   *
+   * This function provides an `AsyncIterableIterator` that yields results for each request as soon as it completes,
+   * preserving high throughput and allowing you to process data as it streams in.
+   * This is useful for a large number of requests where you don't want to wait for all of them to finish before processing.
+   *
+   * @example
+   *
+   * ```ts
+   * import { z } from 'npm:zod'
+   *
+   * const TodoSchema = z.object({
+   *   id: z.number(),
+   *   todo: z.string(),
+   *   completed: z.boolean(),
+   *   userId: z.number(),
+   * })
+   *
+   * const todoIds = [1, 2, 3]
+   *
+   * for await (const result of fx.iter(
+   *   todoIds,
+   *   (id) => new Request(`https://dummyjson.com/todos/${id}`),
+   *   { key: 'todos-api', schema: TodoSchema },
+   * )) {
+   *   if (result.success) {
+   *     console.log('Todo:', result.data)
+   *   } else {
+   *     console.error('Fetch error for id:', result.source, result.error)
+   *   }
+   * }
+   * ```
+   *
+   * @template T The item type of the input array.
+   * @template Schema An optional schema to validate the response body (for JSON responses).
+   * @param items The array of items to be processed into requests.
+   * @param toRequest A function that maps each item in `arr` to a `Request` object.
+   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+   * @returns An async iterable iterator yielding {@link ResponseOrError} objects as they become available.
+   */
+  iter: <T, Schema extends StandardSchemaV1 | undefined = undefined>(
+    items: T[],
+    toRequest: (item: T) => Request,
+    options: FetchOptions<Schema>,
+  ) => AsyncIterableIterator<ResponseOrError<T, Schema>>
+}
+
+// #endregion
+
+// #region Classes
+
+/**
+ * An error that occurs during fetching requests.
+ *
+ * This error is thrown when the fetch request fails.\
+ * It contains the original request and the response object.
+ */
+export class FetchError extends Error {
+  constructor(readonly request: Request, readonly response: Response) {
+    super(`[${request.method}] ${request.url} - ${response.status} ${response.statusText}`)
+    this.name = 'FetchError'
   }
 }
 
 /**
- * Fetch multiple requests concurrently.\
- * Automatically handles rate limiting, retries, and timeouts.
+ * An error that occurs during schema validation.
  *
- * @example
- * ```ts
- * const requests = [
- *   new Request('https://dummy.restapiexample.com/api/v1/employee/1'),
- *   new Request('https://dummy.restapiexample.com/api/v1/employee/2'),
- *   new Request('https://dummy.restapiexample.com/api/v1/employee/3'),
- * ]
+ * This error is thrown when the response body does not conform to the expected schema.\
+ * It contains an array of issues that describe the validation errors.
+ */
+export class SchemaError extends Error {
+  constructor(readonly issues: ReadonlyArray<StandardSchemaV1.Issue>) {
+    super(issues[0]?.message)
+    this.name = 'SchemaError'
+  }
+}
+
+/**
+ * A passthrough stream that simply forwards chunks without modification.
  *
- * const responses = await fetchAll(requests)
- * const data = await Promise.all(responses.map((res) => res.json()))
- * ```
+ * This is useful for creating a stream that does not alter the data,\
+ * allowing it to be used in a pipeline without affecting the data flow.
+ */
+class PassThroughStream<T> extends TransformStream<T, T> {
+  constructor() {
+    super({
+      transform(chunk, controller) {
+        if (chunk !== undefined) controller.enqueue(chunk)
+      },
+    })
+  }
+}
+
+/**
+ * A semaphore implementation for controlling concurrency.
  *
- * @param requests The requests to fetch.
- * @param options The fetch options.
- * @returns The responses. (or parsed and validated JSON data if options.schema is provided)
+ * This class allows a limited number of concurrent operations to proceed.\
+ * It maintains a queue of waiting operations and releases them when capacity is available.
+ */
+class Semaphore {
+  subscribers = 0
+  private queue: (() => void)[] = []
+
+  constructor(private capacity: number) {}
+
+  // deno-lint-ignore require-await
+  async acquire(): Promise<void> {
+    if (this.capacity > 0) this.capacity--
+    else return new Promise((resolve) => this.queue.push(resolve))
+  }
+
+  release(): void {
+    const next = this.queue.shift()
+    if (next) next()
+    else this.capacity++
+  }
+}
+
+// #endregion
+
+// #region Logic
+
+const pools = new Map<string, Semaphore>()
+const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
+const transientStatusCodes = new Set([408, 429, 500, 502, 503, 504])
+
+/**
+ * @deprecated Use `fx.all` instead.
  */
 export async function fetchAll<Schema extends StandardSchemaV1 | undefined = undefined>(
   requests: Request[],
@@ -160,58 +273,30 @@ export async function fetchAll<Schema extends StandardSchemaV1 | undefined = und
   const values: OutputOrResponse<Schema>[] = []
   const errors: unknown[] = []
   ;(await Array.fromAsync(concurrentArrayFetcher(requests, (req) => req, options)))
-    .forEach((r) => r.success ? values.push(r.data) : errors.push(r.error))
+    .forEach((r) => (r.success ? values.push(r.data) : errors.push(r.error)))
   return errors.length ? { values, errors } : { values }
 }
 
 /**
- * Fetch data concurrently from an array of items using a provided request factory.\
- * Yields results as they become available, preserving high throughput with concurrency control.
- *
- * Automatically handles rate limiting, request timeouts, retries, and optional schema validation.\
- * The pool is shared across all calls using the same key.
- *
- * @template T The item type of the input array.
- * @template Schema An optional Zod schema to validate the response body (for JSON responses).
- *
- * @param arr The array of items to be processed into requests.
- * @param fn A function that maps each item in `arr` to a `Request` object.
- * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
- * @returns An async iterable iterator yielding `ResponseOrError<Schema>` objects as they become available.
- *
- * @throws {Error} If no pool key is provided or pool setup fails.
- *
- * @example
- * ```ts
- * const users = ['1', '2', '3']
- *
- * for await (const result of concurrentArrayFetcher(users, id => new Request(`/api/user/${id}`), {
- *   pool: 'user-api',
- *   schema: UserSchema,
- *   concurrency: 10,
- * })) {
- *   if (result.success) {
- *     console.log('User data:', result.data)
- *   } else {
- *     console.error('Fetch error:', result.error)
- *   }
- * }
- * ```
+ * @deprecated Use `fx.iter` instead.
  */
 export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | undefined = undefined>(
-  arr: T[],
-  fn: (item: T) => Request,
+  items: T[],
+  toRequest: (item: T) => Request,
   { key, maxAttempts = 5, timeout = 10_000, deadline = 300_000, schema, concurrency = 64 }: FetchOptions<Schema>,
 ): AsyncIterableIterator<ResponseOrError<T, Schema>> {
+  //
+
   let pool = pools.get(key)
   if (!pool) pools.set(key, pool = new Semaphore(concurrency))
+  pool.subscribers++
 
   const signal = AbortSignal.timeout(deadline)
 
   const runTask = async (source: T) => {
     if (signal.aborted) return
     try {
-      const response = await _fetch(fn(source), { maxAttempts, timeout }, signal)
+      const response = await _fetch(toRequest(source), { maxAttempts, timeout }, signal)
       // deno-lint-ignore no-explicit-any
       let data: any = response
       if (schema) {
@@ -233,9 +318,9 @@ export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | unde
     const writer = res.writable.getWriter()
     const executing: Array<Promise<void>> = []
 
-    for (const source of arr) {
+    for (const source of items) {
       if (signal.aborted) {
-        writer.write({ source: undefined, success: false, error: signal.reason })
+        writer.write({ source, success: false, error: signal.reason })
         break
       }
       await pool.acquire()
@@ -250,26 +335,10 @@ export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | unde
 
     await Promise.all(executing)
     writer.close()
+    if (--pool.subscribers === 0) pools.delete(key)
   })()
 
   return res.readable[Symbol.asyncIterator]()
-}
-
-// #endregion
-
-// #region Logic
-
-const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
-const retryStatusCodes = new Set([408, 429, 500, 502, 503, 504])
-
-class FetchError extends Error {
-  constructor(
-    public request: Request,
-    public response: Response,
-  ) {
-    super(`[${request.method}] ${request.url} - ${response.status} ${response.statusText}`)
-    this.name = 'FetchError'
-  }
 }
 
 async function _fetch(
@@ -299,16 +368,15 @@ async function _fetch(
 
       if (maxAttempts <= 0 || parentSignal?.aborted) break // no more attempts left or outer deadline exceeded
 
-      if (error instanceof FetchError && retryStatusCodes.has(error.response.status)) {
-        const retryAfter = error.response.headers.get('Retry-After')
+      if (error instanceof FetchError && transientStatusCodes.has(error.response.status)) {
+        const header = error.response.headers.get('Retry-After')
 
-        if (retryAfter) {
-          let after = Number(retryAfter) * 1000 + Date.now()
+        if (header) {
+          let wait = Number(header) * 1000
 
-          if (Number.isNaN(after)) after = Date.parse(retryAfter)
-          if (Number.isNaN(after) || after >= maxRetryAfter) break // invalid header or too long to wait
+          if (Number.isNaN(wait)) wait = Date.parse(header) - Date.now()
+          if (Number.isNaN(wait) || Date.now() + wait >= maxRetryAfter) break // invalid header or too long to wait
 
-          const wait = after - Date.now()
           if (wait > 0) await delay(wait, { signal: parentSignal }) // wait before retrying
         }
       }
@@ -329,21 +397,61 @@ function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentS
   })
 }
 
-class PassThroughStream<T> extends TransformStream<T, T> {
-  constructor() {
-    super({
-      transform(chunk, controller) {
-        if (chunk !== undefined) {
-          controller.enqueue(chunk)
-        }
-      },
-    })
-  }
-}
-
 // #endregion
 
+// #region Wrapper
+
 /**
- * TODO:
- * - remove vendored SchemaError when jsr version is fixed (https://github.com/denoland/deno/issues/30052)
+ * A fetch wrapper with advanced features like pooling, retries, and timeouts.
+ *
+ * It provides three main functions for different use cases:
+ *
+ * - `fx`: For a single fetch request.
+ * - `fx.all`: For fetching multiple requests concurrently and returning an array of all results.
+ * - `fx.iter`: For fetching multiple requests concurrently, yielding results as they become available.
+ *
+ * All functions automatically handle rate limiting, retries, and timeouts.\
+ * The pool is shared across all calls using the same `key`.
+ *
+ * @example
+ *
+ * ```ts
+ * import { z } from 'npm:zod'
+ *
+ * const TodoSchema = z.object({
+ *   id: z.number(),
+ *   todo: z.string(),
+ *   completed: z.boolean(),
+ *   userId: z.number(),
+ * })
+ *
+ * const request = new Request('https://dummyjson.com/todos/1')
+ * const result = await fx(request, {
+ *   key: 'todos-api',
+ *   schema: TodoSchema,
+ * })
+ *
+ * if (result.success) {
+ *   // 'result.data' is now strongly typed based on TodoSchema
+ *   console.log('Todo title:', result.data.todo)
+ * } else {
+ *   console.error('Fetch error:', result.error)
+ * }
+ * ```
+ *
+ * @template Schema An optional schema to validate the response body (for JSON responses).
+ * @param request The request object to fetch.
+ * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+ * @returns A promise resolving to a single result object.
  */
+const fx: Fx = async (request, options) => {
+  const result = await concurrentArrayFetcher([request], (r) => r, options).next()
+  if (result.done) throw new Error('Unexpected end of iterator')
+  return result.value
+}
+fx.all = fetchAll
+fx.iter = concurrentArrayFetcher
+
+export { fx }
+
+// #endregion
