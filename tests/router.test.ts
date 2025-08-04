@@ -116,7 +116,7 @@ Deno.test('router', async (t) => {
     })
   }
 
-  await t.step('Non-existent handler returns 404', async () => {
+  await t.step('non-existent handler returns 404', async () => {
     const res = await fetch(`http://${server.addr.hostname}:${server.addr.port}/api/`, { method: 'POST' })
     const text = await res.text()
 

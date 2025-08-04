@@ -83,7 +83,7 @@ import {
   zodErrorsIntegration,
 } from 'npm:@sentry/deno@^10.0.0'
 
-export * from 'npm:@sentry/deno@^9.43.0'
+export * from 'npm:@sentry/deno@^10.0.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 

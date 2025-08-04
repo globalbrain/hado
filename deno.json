@@ -38,5 +38,8 @@
     "semiColons": false,
     "singleQuote": true
   },
-  "imports": {}
+  "imports": {},
+  "unstable": [
+    "broadcast-channel"
+  ]
 }
