@@ -49,6 +49,7 @@ const peerDependenciesMeta = optionalPeerDependencyKeys.length
   ? Object.fromEntries(optionalPeerDependencyKeys.map((dep) => [dep, { optional: true }]))
   : undefined
 
+const entryPoints = Object.values(exports)
 const external = [
   ...Object.keys(dependencies ?? {}),
   ...Object.keys(optionalDependencies ?? {}),
@@ -58,8 +59,8 @@ const external = [
 await emptyDir('dist')
 
 const res = await build({
-  plugins: [tsid(), ...denoPlugins()],
-  entryPoints: Object.values(exports),
+  plugins: [tsid({ include: entryPoints }), ...denoPlugins()],
+  entryPoints,
   outdir: 'dist',
   bundle: true,
   format: 'esm',
