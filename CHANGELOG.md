@@ -1,3 +1,5 @@
+## [0.18.1](https://github.com/globalbrain/hado/compare/v0.18.0...v0.18.1) (2025-09-06)
+
 ## [0.18.0](https://github.com/globalbrain/hado/compare/v0.17.3...v0.18.0) (2025-08-04)
 
 ### Features
