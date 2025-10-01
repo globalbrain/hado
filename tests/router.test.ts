@@ -37,11 +37,18 @@ class Server {
 }
 
 Deno.test('router', async (t) => {
-  // #region Setup
-
-  using temp = new TempDir()
+  const ignoredFiles = [
+    '/_internal.ts',
+    '/foo/.hidden.ts',
+    '/coverage/report.ts',
+    '/tests/health.test.ts',
+    '/docs/spec_test.ts',
+    '/node_modules/pkg/index.ts',
+    '/reports/run.spec.ts',
+  ] as const
 
   const files = [
+    ...ignoredFiles,
     '/posts.ts',
     '/[root-slug].ts',
     '/index.ts',
@@ -65,6 +72,37 @@ Deno.test('router', async (t) => {
     '/foo bar.ts',
   ] as const
 
+  const tests: Record<string, { file: (typeof files)[number]; params: Record<string, string | string[]> }> = {
+    '/': { file: '/index.ts', params: {} },
+    '/apples/1/2/ef': { file: '/apples/[ab]/[cd]/ef.ts', params: { ab: '1', cd: '2' } },
+    '/blog/abc': { file: '/(blog)/blog/abc/index.ts', params: {} },
+    '/blog/abc/post': { file: '/(blog)/blog/abc/post.ts', params: {} },
+    '/blog/abc/1': { file: '/(blog)/blog/abc/[id].ts', params: { id: '1' } },
+    '/blog/1': { file: '/(blog)/blog/[id].ts', params: { id: '1' } },
+    '/blog/1/comments/2': { file: '/(blog)/blog/[id]/comments/[cid].ts', params: { id: '1', cid: '2' } },
+    '/foo/1/bar/baz/2': { file: '/foo/[d]/bar/baz/[f].ts', params: { d: '1', f: '2' } },
+    '/p/1/2/3': { file: '/p/[...rest].ts', params: { rest: ['1', '2', '3'] } },
+    '/p1': { file: '/p1/[[...incl]].ts', params: { incl: [] } },
+    '/p1/1/2/3': { file: '/p1/[[...incl]].ts', params: { incl: ['1', '2', '3'] } },
+    '/p2/1': { file: '/p2/[id].ts', params: { id: '1' } },
+    '/p2/1/abc': { file: '/p2/[id]/abc.ts', params: { id: '1' } },
+    '/p2/1/2/3': { file: '/p2/[...rest].ts', params: { rest: ['1', '2', '3'] } },
+    '/p3/1': { file: '/p3/[id].ts', params: { id: '1' } },
+    '/p3/1/abc': { file: '/p3/[id]/abc.ts', params: { id: '1' } },
+    '/p3': { file: '/p3/[[...rest]].ts', params: { rest: [] } },
+    '/p3/1/2/3': { file: '/p3/[[...rest]].ts', params: { rest: ['1', '2', '3'] } },
+    '/posts': { file: '/posts.ts', params: {} },
+    '/posts/1': { file: '/posts/[id].ts', params: { id: '1' } },
+    '/apples': { file: '/[root-slug].ts', params: { 'root-slug': 'apples' } },
+    '/1/2/3': { file: '/[...rest].ts', params: { rest: ['1', '2', '3'] } },
+    '/blog/1/2': { file: '/[...rest].ts', params: { rest: ['blog', '1', '2'] } },
+    '/foo%20bar': { file: '/foo bar.ts', params: {} },
+  }
+
+  // #region Setup
+
+  using temp = new TempDir()
+
   for (const file of files) {
     const path = temp.path + file
     await Deno.mkdir(dirname(path), { recursive: true })
@@ -74,41 +112,16 @@ Deno.test('router', async (t) => {
     )
   }
 
-  const { handler } = await createRouter({ fsRoot: temp.path, urlRoot: 'api' })
+  const { handler, reloadRouter } = await createRouter({ fsRoot: temp.path, urlRoot: 'api' })
   using server = new Server(handler)
+
+  const base = `http://${server.addr.hostname}:${server.addr.port}/api`
 
   // #endregion
 
-  const tests: Record<string, { file: (typeof files)[number]; params: Record<string, string | string[]> }> = {
-    '/api/': { file: '/index.ts', params: {} },
-    '/api/apples/1/2/ef': { file: '/apples/[ab]/[cd]/ef.ts', params: { ab: '1', cd: '2' } },
-    '/api/blog/abc': { file: '/(blog)/blog/abc/index.ts', params: {} },
-    '/api/blog/abc/post': { file: '/(blog)/blog/abc/post.ts', params: {} },
-    '/api/blog/abc/1': { file: '/(blog)/blog/abc/[id].ts', params: { id: '1' } },
-    '/api/blog/1': { file: '/(blog)/blog/[id].ts', params: { id: '1' } },
-    '/api/blog/1/comments/2': { file: '/(blog)/blog/[id]/comments/[cid].ts', params: { id: '1', cid: '2' } },
-    '/api/foo/1/bar/baz/2': { file: '/foo/[d]/bar/baz/[f].ts', params: { d: '1', f: '2' } },
-    '/api/p/1/2/3': { file: '/p/[...rest].ts', params: { rest: ['1', '2', '3'] } },
-    '/api/p1': { file: '/p1/[[...incl]].ts', params: { incl: [] } },
-    '/api/p1/1/2/3': { file: '/p1/[[...incl]].ts', params: { incl: ['1', '2', '3'] } },
-    '/api/p2/1': { file: '/p2/[id].ts', params: { id: '1' } },
-    '/api/p2/1/abc': { file: '/p2/[id]/abc.ts', params: { id: '1' } },
-    '/api/p2/1/2/3': { file: '/p2/[...rest].ts', params: { rest: ['1', '2', '3'] } },
-    '/api/p3/1': { file: '/p3/[id].ts', params: { id: '1' } },
-    '/api/p3/1/abc': { file: '/p3/[id]/abc.ts', params: { id: '1' } },
-    '/api/p3': { file: '/p3/[[...rest]].ts', params: { rest: [] } },
-    '/api/p3/1/2/3': { file: '/p3/[[...rest]].ts', params: { rest: ['1', '2', '3'] } },
-    '/api/posts': { file: '/posts.ts', params: {} },
-    '/api/posts/1': { file: '/posts/[id].ts', params: { id: '1' } },
-    '/api/apples': { file: '/[root-slug].ts', params: { 'root-slug': 'apples' } },
-    '/api/1/2/3': { file: '/[...rest].ts', params: { rest: ['1', '2', '3'] } },
-    '/api/blog/1/2': { file: '/[...rest].ts', params: { rest: ['blog', '1', '2'] } },
-    '/api/foo%20bar': { file: '/foo bar.ts', params: {} },
-  }
-
   for (const [url, expected] of Object.entries(tests)) {
     await t.step(`lookup ${url}`, async () => {
-      const res = await fetch(`http://${server.addr.hostname}:${server.addr.port}${url}`)
+      const res = await fetch(`${base}${url}`)
       const text = await res.text()
 
       assertEquals(res.status, 200)
@@ -116,8 +129,23 @@ Deno.test('router', async (t) => {
     })
   }
 
+  // delete fallback routes
+  await Deno.remove(temp.path + '/[...rest].ts')
+  await Deno.remove(temp.path + '/[root-slug].ts')
+  await reloadRouter()
+
+  for (const file of ignoredFiles) {
+    await t.step(`ignored file ${file} returns 404`, async () => {
+      const res = await fetch(`${base}${file.replace(/\.ts$/, '')}`)
+      const text = await res.text()
+
+      assertEquals(res.status, 404)
+      assertEquals(text, 'Not Found')
+    })
+  }
+
   await t.step('non-existent handler returns 404', async () => {
-    const res = await fetch(`http://${server.addr.hostname}:${server.addr.port}/api/`, { method: 'POST' })
+    const res = await fetch(`${base}/`, { method: 'POST' })
     const text = await res.text()
 
     assertEquals(res.status, 404)
@@ -125,7 +153,7 @@ Deno.test('router', async (t) => {
   })
 
   await t.step('HEAD is implicitly handled', async () => {
-    const res = await fetch(`http://${server.addr.hostname}:${server.addr.port}/api/`, { method: 'HEAD' })
+    const res = await fetch(`${base}/`, { method: 'HEAD' })
 
     assertEquals(res.status, 200)
     assertEquals(res.headers.get('content-type'), 'text/plain;charset=UTF-8')

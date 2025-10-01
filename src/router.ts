@@ -28,7 +28,6 @@ import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.2/posix/normaliz
 import { toFileUrl } from 'jsr:@std/path@^1.1.2/to-file-url'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
-const ignore = /^(?:.*?\/)?(?:(?:_|\.|node_modules\/|coverage\/).*|.*\.d\.ts)$/
 
 type Awaitable<T> = T | Promise<T>
 type Params = Record<string, string | string[]>
@@ -66,8 +65,11 @@ class LRUCache<K, V> {
     return this.#cache.keys().next().value
   }
 
-  async use(key: K, fn: () => Awaitable<V>, skip = false): Promise<V> {
-    if (skip) return fn()
+  clear(): void {
+    return this.#cache.clear()
+  }
+
+  async use(key: K, fn: () => Awaitable<V>): Promise<V> {
     let val = this.#get(key)
     if (val === undefined) {
       val = await fn()
@@ -282,7 +284,17 @@ export async function createRouter(
     static?: ServeDirOptions & { fsRoot: string }
     dev?: boolean
   },
-): Promise<{ handler: (req: Request) => Promise<Response> }> {
+): Promise<{
+  /**
+   * The request handler.
+   */
+  handler: (req: Request) => Promise<Response>
+  /**
+   * Reloads the router (e.g. after modifying route files).
+   * dev mode automatically reloads the router on file changes.
+   */
+  reloadRouter: () => Promise<void>
+}> {
   let root: UrlNode
 
   /** req.url.pathname:METHOD -> { match, params } */
@@ -291,12 +303,14 @@ export async function createRouter(
   const handlerCache = new LRUCache<string, Handler | null>(100)
 
   async function createTree() {
+    lookupCache.clear()
+    handlerCache.clear()
     root = new UrlNode()
 
     for await (const file of walk(fsRoot, { includeDirs: false, includeSymlinks: false, exts: ['.ts'] })) {
-      let path = file.path.slice(fsRoot.length).replace(/\\/g, '/')
-      if (path.endsWith('.d.ts') || path.includes('/_') || path.includes('/.')) continue
-      path = path.replace(/\.ts$/, '').replace(/\/(index)?$/, '').replace(/^(?!\/)/, '/')
+      let path = file.path.slice(fsRoot.length)
+      if (!shouldProcessFile(path)) continue
+      path = path.replace(/\\/g, '/').replace(/\.ts$/, '').replace(/\/(?:index)?$/, '').replace(/^(?!\/)/, '/')
       root.insert(path, toFileUrl(file.path).href)
     }
   }
@@ -315,7 +329,7 @@ export async function createRouter(
       for await (const event of watcher) {
         if (
           (event.kind === 'create' || event.kind === 'remove' || event.kind === 'rename') &&
-          event.paths.some((path) => !ignore.test(path))
+          event.paths.some((path) => shouldProcessFile(path))
         ) reloadRouter()
       }
     })()
@@ -336,7 +350,6 @@ export async function createRouter(
           return null
         }
       },
-      dev,
     )
   }
 
@@ -359,7 +372,6 @@ export async function createRouter(
       const result = await lookupCache.use(
         `${normalizedPath}:${req.method}`,
         () => root.lookup(normalizedPath, async (file) => !!(await getHandler(file, req.method))),
-        dev,
       )
 
       if (result !== null) return (await getHandler(result.match, req.method))!(req, result.params)
@@ -370,7 +382,7 @@ export async function createRouter(
     return createStandardResponse(STATUS_CODE.NotFound)
   }
 
-  return { handler }
+  return { handler, reloadRouter: createTree }
 }
 
 /**
@@ -389,6 +401,21 @@ export async function createRouter(
 export function createStandardResponse(status: StatusCode, init?: ResponseInit): Response {
   const statusText = STATUS_TEXT[status]
   return new Response(statusText, { status, statusText, ...init })
+}
+
+function shouldProcessFile(path: string): boolean {
+  path = path.replace(/\\/g, '/')
+  if (!path.endsWith('.ts')) return false
+  return !(
+    path.includes('node_modules/') ||
+    path.includes('coverage/') ||
+    path.includes('/.') ||
+    path.includes('/_') ||
+    path.endsWith('.d.ts') ||
+    path.endsWith('.spec.ts') ||
+    path.endsWith('.test.ts') ||
+    path.endsWith('_test.ts')
+  )
 }
 
 /**
