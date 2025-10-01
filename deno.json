@@ -13,13 +13,6 @@
       "src/**/*.ts"
     ]
   },
-  "compilerOptions": {
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitReturns": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  },
   "tasks": {
     "format": "deno fmt",
     "format:fail": "deno fmt --check",
@@ -32,11 +25,29 @@
     "release": "deno run -A ./scripts/release.ts",
     "update": "deno run -A ./scripts/update.ts -x esbuild && deno task check"
   },
+  "compilerOptions": {
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
   "fmt": {
     "lineWidth": 120,
     "proseWrap": "preserve",
     "semiColons": false,
     "singleQuote": true
+  },
+  "lint": {
+    "rules": {
+      "tags": [
+        "recommended",
+        "jsr"
+      ],
+      "exclude": [
+        "no-import-prefix"
+      ]
+    }
   },
   "imports": {},
   "unstable": [
