@@ -1,3 +1,9 @@
+## [0.19.1](https://github.com/globalbrain/hado/compare/v0.19.0...v0.19.1) (2025-10-02)
+
+### Bug Fixes
+
+- no need for long initial timeout ([6f02452](https://github.com/globalbrain/hado/commit/6f0245245e814501a328c95b9918bf9a407693fa))
+
 ## [0.19.0](https://github.com/globalbrain/hado/compare/v0.18.1...v0.19.0) (2025-10-02)
 
 ### Bug Fixes
