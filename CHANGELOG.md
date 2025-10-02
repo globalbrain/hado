@@ -1,3 +1,10 @@
+## [0.19.0](https://github.com/globalbrain/hado/compare/v0.18.1...v0.19.0) (2025-10-02)
+
+### Bug Fixes
+
+- exclude test files from route scanning ([f3572c2](https://github.com/globalbrain/hado/commit/f3572c2e2dfcb993831ef88cecb121227e44c72b))
+- improve error traces for timeouts in fetch utilities ([ab41a84](https://github.com/globalbrain/hado/commit/ab41a84a24b16aa5170286ee6f5fbd954ef2f283))
+
 ## [0.18.1](https://github.com/globalbrain/hado/compare/v0.18.0...v0.18.1) (2025-09-06)
 
 ## [0.18.0](https://github.com/globalbrain/hado/compare/v0.17.3...v0.18.0) (2025-08-04)
