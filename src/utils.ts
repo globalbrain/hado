@@ -418,7 +418,7 @@ const signalAbort: unique symbol = Object.getOwnPropertySymbols(AbortSignal.prot
   .find((s) => s.description === '[[signalAbort]]') as any
 
 function timeoutSignal(ms: number, reason: string): AbortSignal {
-  const signal = AbortSignal.timeout(Number.MAX_SAFE_INTEGER) as AbortSignal & {
+  const signal = AbortSignal.timeout(0) as AbortSignal & {
     [timerId]: number | null
     [signalAbort]: (reason: unknown) => void
   }
