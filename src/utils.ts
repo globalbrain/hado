@@ -197,7 +197,7 @@ export type Fx = {
 export class FetchError extends Error {
   constructor(readonly request: Request, readonly response: Response) {
     super(`[${request.method}] ${request.url} - ${response.status} ${response.statusText}`)
-    this.name = 'FetchError'
+    Object.defineProperty(this, 'name', { value: 'FetchError' })
   }
 }
 
@@ -210,7 +210,17 @@ export class FetchError extends Error {
 export class SchemaError extends Error {
   constructor(readonly issues: ReadonlyArray<StandardSchemaV1.Issue>) {
     super(issues[0]?.message)
-    this.name = 'SchemaError'
+    Object.defineProperty(this, 'name', { value: 'SchemaError' })
+  }
+}
+
+/**
+ * An error that occurs when a timeout is reached.
+ */
+export class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message)
+    Object.defineProperty(this, 'name', { value: 'TimeoutError' })
   }
 }
 
@@ -291,7 +301,7 @@ export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | unde
   if (!pool) pools.set(key, pool = new Semaphore(concurrency))
   pool.subscribers++
 
-  const signal = AbortSignal.timeout(deadline)
+  const signal = timeoutSignal(deadline, `Deadline of ${deadline}ms exceeded`)
 
   const runTask = async (source: T) => {
     if (signal.aborted) return
@@ -353,11 +363,13 @@ async function _fetch(
 
   while (maxAttempts-- > 0) {
     try {
-      const res = await deadline(
-        (signal) => fetch(req, { signal: AbortSignal.any([req.signal, signal]) }),
-        timeout,
-        parentSignal,
-      )
+      const res = await fetch(req, {
+        signal: AbortSignal.any([
+          req.signal,
+          timeoutSignal(timeout, `Request timed out after ${timeout}ms`),
+          ...(parentSignal ? [parentSignal] : []),
+        ]),
+      })
 
       if (res.ok) return res
       throw new FetchError(req, res)
@@ -386,15 +398,44 @@ async function _fetch(
   throw lastError
 }
 
-function deadline<T>(p: (signal: AbortSignal) => Promise<T>, ms: number, parentSignal?: AbortSignal): Promise<T> {
-  const c = new AbortController()
-  const timeout = AbortSignal.any([AbortSignal.timeout(ms), ...(parentSignal ? [parentSignal] : [])])
-  const abort = () => c.abort(timeout.reason)
-  if (timeout.aborted) abort()
-  timeout.addEventListener('abort', abort, { once: true })
-  return p(c.signal).finally(() => {
-    timeout.removeEventListener('abort', abort)
-  })
+// #endregion
+
+// #region Internals
+
+const queueSystemTimer: (
+  // deno-lint-ignore ban-types
+  associatedOp: Function | undefined,
+  repeat: boolean,
+  delay: number,
+  callback: () => void,
+  // deno-lint-ignore no-explicit-any
+) => number = (Deno as any)[(Deno as any).internal].core.queueSystemTimer
+const timerId: unique symbol = Object.getOwnPropertySymbols(AbortSignal.timeout(0))
+  // deno-lint-ignore no-explicit-any
+  .find((s) => s.description === '[[timerId]]') as any
+const signalAbort: unique symbol = Object.getOwnPropertySymbols(AbortSignal.prototype)
+  // deno-lint-ignore no-explicit-any
+  .find((s) => s.description === '[[signalAbort]]') as any
+
+function timeoutSignal(ms: number, reason: string): AbortSignal {
+  const signal = AbortSignal.timeout(Number.MAX_SAFE_INTEGER) as AbortSignal & {
+    [timerId]: number | null
+    [signalAbort]: (reason: unknown) => void
+  }
+  signal[timerId] != null && clearTimeout(signal[timerId])
+  const error = new TimeoutError(reason)
+  signal[timerId] = queueSystemTimer(
+    undefined,
+    false,
+    ms,
+    () => {
+      signal[timerId] != null && clearTimeout(signal[timerId])
+      signal[timerId] = null
+      signal[signalAbort](error)
+    },
+  )
+  signal[timerId] != null && Deno.unrefTimer(signal[timerId])
+  return signal
 }
 
 // #endregion

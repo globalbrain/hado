@@ -135,6 +135,7 @@ Deno.test('utils', async (t) => {
         assert(!result.success)
         assertInstanceOf(result.error, Error)
         assertEquals(result.error.name, 'TimeoutError')
+        assertEquals(result.error.message, 'Deadline of 50ms exceeded')
       }),
     )
   })
