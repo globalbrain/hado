@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@brc-dd/import-map@0.24": "0.24.0",
     "jsr:@cliffy/ansi@1.0.0-rc.8": "1.0.0-rc.8",
     "jsr:@cliffy/internal@1.0.0-rc.8": "1.0.0-rc.8",
     "jsr:@cliffy/keycode@1.0.0-rc.8": "1.0.0-rc.8",
@@ -10,7 +11,7 @@
     "jsr:@david/dax@~0.43.2": "0.43.2",
     "jsr:@david/path@0.2": "0.2.0",
     "jsr:@david/which@~0.4.1": "0.4.1",
-    "jsr:@deno/graph@0.101": "0.101.0",
+    "jsr:@deno/graph@0.102": "0.102.0",
     "jsr:@luca/esbuild-deno-loader@~0.11.1": "0.11.1",
     "jsr:@standard-schema/spec@1.0.0": "1.0.0",
     "jsr:@std/assert@^1.0.14": "1.0.14",
@@ -55,6 +56,9 @@
     "npm:zod@4.1.11": "4.1.11"
   },
   "jsr": {
+    "@brc-dd/import-map@0.24.0": {
+      "integrity": "82e6318ea6f49e6659e8ecaa3ce3d3c8453f58f8d1e09a4e4729da3212654d92"
+    },
     "@cliffy/ansi@1.0.0-rc.8": {
       "integrity": "ba37f10ce55bbfbdd8ddd987f91f029b17bce88385b98ba3058870f3b007b80c",
       "dependencies": [
@@ -110,8 +114,8 @@
     "@david/which@0.4.1": {
       "integrity": "896a682b111f92ab866cc70c5b4afab2f5899d2f9bde31ed00203b9c250f225e"
     },
-    "@deno/graph@0.101.0": {
-      "integrity": "fb232ba77cbb0c84dcc94d7abaa74e4c29c947005a1f6ed057d1f14b5560e88a"
+    "@deno/graph@0.102.0": {
+      "integrity": "7f436b9b1672850c32b16855bb3aa01c7f0109c326f30fa5b17544a8180fd1f3"
     },
     "@luca/esbuild-deno-loader@0.11.1": {
       "integrity": "dc020d16d75b591f679f6b9288b10f38bdb4f24345edb2f5732affa1d9885267",
@@ -960,12 +964,5 @@
     "zod@4.1.11": {
       "integrity": "sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg=="
     }
-  },
-  "remote": {
-    "https://deno.land/x/dir@1.5.1/data_local_dir/mod.ts": "91eb1c4bfadfbeda30171007bac6d85aadacd43224a5ed721bbe56bc64e9eb66",
-    "https://deno.land/x/import_map@v0.23.0/import_map.generated.js": "e6f33015b8b6161100438eb3a9fad616e5064238cf5df6bd03ffc6ff28df748b",
-    "https://deno.land/x/import_map@v0.23.0/mod.ts": "b074650942b9cca0bd1a5a2c354338f844f93b0ae01de10a14718415d7f370f7",
-    "https://deno.land/x/wasmbuild@0.15.1/cache.ts": "9d01b5cb24e7f2a942bbd8d14b093751fa690a6cde8e21709ddc97667e6669ed",
-    "https://deno.land/x/wasmbuild@0.15.1/loader.ts": "8c2fc10e21678e42f84c5135d8ab6ab7dc92424c3f05d2354896a29ccfd02a63"
   }
 }
