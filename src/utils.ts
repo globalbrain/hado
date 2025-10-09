@@ -417,7 +417,13 @@ const signalAbort: unique symbol = Object.getOwnPropertySymbols(AbortSignal.prot
   // deno-lint-ignore no-explicit-any
   .find((s) => s.description === '[[signalAbort]]') as any
 
-function timeoutSignal(ms: number, reason: string): AbortSignal {
+/**
+ * Creates an `AbortSignal` that automatically aborts after a specified timeout.\
+ * Compared to `AbortSignal.timeout`, this implementation allows customizing the abort reason,\
+ * and maintains the call stack for better debugging.
+ * @experimental
+ */
+export function timeoutSignal(ms: number, reason: string): AbortSignal {
   const signal = AbortSignal.timeout(0) as AbortSignal & {
     [timerId]: number | null
     [signalAbort]: (reason: unknown) => void
