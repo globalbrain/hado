@@ -1,3 +1,9 @@
+## [0.19.2](https://github.com/globalbrain/hado/compare/v0.19.1...v0.19.2) (2025-10-09)
+
+### Features
+
+- export `timeoutSignal` ([fa0b7df](https://github.com/globalbrain/hado/commit/fa0b7dff0f7d2f95209661ba6b34014d7d383acc))
+
 ## [0.19.1](https://github.com/globalbrain/hado/compare/v0.19.0...v0.19.1) (2025-10-02)
 
 ### Bug Fixes
