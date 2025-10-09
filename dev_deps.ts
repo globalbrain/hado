@@ -1,5 +1,4 @@
 import { $ as _$, type $Type } from 'jsr:@david/dax@^0.43.2'
-import { gray } from 'jsr:@std/fmt@^1.0.8/colors'
 
 export { parseFromJson } from 'jsr:@brc-dd/import-map@^0.24.0'
 export { Confirm, Input, Select } from 'jsr:@cliffy/prompt@^1.0.0-rc.8'
@@ -21,15 +20,8 @@ export { build } from 'npm:esbuild@0.25.5'
 export { default as tsid } from 'npm:unplugin-isolated-decl@^0.15.2/esbuild'
 export { z } from 'npm:zod@4.1.11'
 
-const enc = new TextEncoder()
-
 export const $ = new Proxy(_$, {
   apply(target, thisArg, args: Parameters<$Type>) {
-    Deno.stderr.writeSync(enc.encode(gray(`$ ${compileTemplate(...args)}\n`)))
     return Reflect.apply(target.raw, thisArg, args).quiet()
   },
 })
-
-function compileTemplate(strings: TemplateStringsArray, ...exprs: unknown[]): string {
-  return strings.reduce((acc, str, i) => acc + str + (i < exprs.length ? String(exprs[i]) : ''), '')
-}
