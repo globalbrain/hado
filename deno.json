@@ -21,7 +21,8 @@
     "test": "deno test -A",
     "test:watch": "deno test -A --watch",
     "type": "deno check **/*.ts",
-    "check": "deno task format:fail && deno task lint:fail && deno task type && deno task test",
+    "check:only": "deno task format:fail && deno task lint:fail && deno task type",
+    "check": "deno task check:only && deno task test",
     "release": "deno run -A ./scripts/release.ts",
     "update": "deno run -A ./scripts/update.ts -x esbuild && deno task check"
   },

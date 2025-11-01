@@ -64,7 +64,7 @@ import type {
   Options,
   RequestEventData,
   SpanAttributes,
-} from 'npm:@sentry/core@^10.17.0'
+} from 'npm:@sentry/core@^10.22.0'
 import {
   captureConsoleIntegration,
   captureException,
@@ -81,9 +81,9 @@ import {
   startSpan,
   withIsolationScope,
   zodErrorsIntegration,
-} from 'npm:@sentry/deno@^10.17.0'
+} from 'npm:@sentry/deno@^10.22.0'
 
-export * from 'npm:@sentry/deno@^10.17.0'
+export * from 'npm:@sentry/deno@^10.22.0'
 
 type RawHandler = (request: Request, info: Deno.ServeHandlerInfo) => Response | Promise<Response>
 

@@ -1,0 +1,73 @@
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      deno_versions:
+        type: string
+      node_versions:
+        type: string
+      bun_versions:
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - run: |
+          set -euo pipefail
+          shopt -s globstar nullglob extglob
+
+          TEST_FILES=(**/*.test.ts)
+
+          if NO_COLOR=1 deno task 2>/dev/null | grep '^- build' >/dev/null; then
+            deno task build
+          fi
+          if NO_COLOR=1 deno task 2>/dev/null | grep '^- check:only' >/dev/null; then
+            deno task check:only
+          fi
+
+          NPM_DEPS=$(jq -r '.imports | to_entries[] | select(.value | startswith("npm:")) | .value[4:]' deno.json)
+          JSR_DEPS=$(jq -r '.imports | to_entries[] | select(.value | startswith("jsr:")) | .value' deno.json)
+
+          if [ -d "./dist" ]; then
+            (cd dist && pnpm pack --out=pkg.tgz)
+            NPM_DEPS="./dist/pkg.tgz $NPM_DEPS"
+          fi
+
+          for version in ${{ inputs.deno_versions }}; do
+            echo "Testing on Deno version $version"
+            deno upgrade ${version}
+            deno -v
+            deno test -A "${TEST_FILES[@]}"
+          done
+
+          for version in ${{ inputs.node_versions }}; do
+            echo '{ "type": "module" }' >package.json
+            echo "Testing on Node.js version $version"
+            pnpm env use --global ${version}
+            node -v
+            if [ -n "$NPM_DEPS" ] || [ -n "$JSR_DEPS" ]; then
+              pnpm add $NPM_DEPS $JSR_DEPS
+            fi
+            pnpx tsx --test "${TEST_FILES[@]}"
+          done
+
+          for version in ${{ inputs.bun_versions }}; do
+            echo '{ "type": "module" }' >package.json
+            echo "Testing on Bun version $version"
+            pnpm add --dangerously-allow-all-builds -g bun@${version}
+            bun -v
+            if [ -n "$NPM_DEPS" ]; then
+              bun add $NPM_DEPS
+            fi
+            if [ -n "$JSR_DEPS" ]; then
+              bun x jsr add $(echo $JSR_DEPS | sed 's/^jsr://')
+            fi
+            bun test "${TEST_FILES[@]}"
+          done

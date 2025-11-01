@@ -49,9 +49,6 @@ function isReleaseType(value: string): value is SemVer.ReleaseType {
   return SEMVER_INCREMENTS.includes(value as SemVer.ReleaseType)
 }
 
-const denoJson = JSON.parse(await Deno.readTextFile('deno.json'))
-const oldVersion = SemVer.parse(denoJson.version)
-
 // #endregion
 
 // #region Prompt
@@ -233,9 +230,23 @@ async function open(url: string): Promise<void> {
 
 // #endregion
 
+// #region Manifest
+
+let manifestFile = 'deno.json'
+let manifest: { name: string; version: string }
+try {
+  manifest = JSON.parse(await Deno.readTextFile(manifestFile))
+} catch {
+  manifestFile = 'package.json'
+  manifest = JSON.parse(await Deno.readTextFile(manifestFile))
+}
+const oldVersion = SemVer.parse(manifest.version)
+
+// #endregion
+
 // #region Main
 
-console.log(`\nPublish a new version of ${bold(magenta(denoJson.name))} ${dim(`(current: ${denoJson.version})`)}\n`)
+console.log(`\nPublish a new version of ${bold(magenta(manifest.name))} ${dim(`(current: ${manifest.version})`)}\n`)
 
 let version = await Select.prompt({
   message: 'Select version increment',
@@ -255,12 +266,12 @@ if (version === 'other') {
 
 const newVersion = SemVer.format(isReleaseType(version) ? SemVer.increment(oldVersion, version) : SemVer.parse(version))
 
-if (!(await Confirm.prompt({ message: `Bump ${dim(`(${denoJson.version} → ${newVersion})`)}?` }))) Deno.exit()
+if (!(await Confirm.prompt({ message: `Bump ${dim(`(${manifest.version} → ${newVersion})`)}?` }))) Deno.exit()
 
-await step('Updating version in deno.json', async () => {
-  denoJson.version = newVersion
-  await Deno.writeTextFile('deno.json', JSON.stringify(denoJson, null, 2))
-  await $`deno fmt deno.json`
+await step(`Updating version in ${manifestFile}`, async () => {
+  manifest.version = newVersion
+  await Deno.writeTextFile(manifestFile, JSON.stringify(manifest, null, 2))
+  await $`deno fmt ${manifestFile}`
 })
 
 await step('Generating changelog', async () => {
@@ -271,7 +282,7 @@ await step('Generating changelog', async () => {
 if (!(await Confirm.prompt({ message: 'Changelog generated. Does it look good?' }))) Deno.exit()
 
 await step('Committing changes', async () => {
-  await $`git add deno.json CHANGELOG.md`
+  await $`git add ${manifestFile} CHANGELOG.md`
   await $`git commit -m "release: v${newVersion}"`
   await $`git tag v${newVersion}`
 })

@@ -1,5 +1,5 @@
-import { delay, http, HttpResponse } from 'npm:msw@2.11.3'
-import { setupServer, type SetupServerApi } from 'npm:msw@2.11.3/node'
+import { delay, http, HttpResponse } from 'npm:msw@2.11.6'
+import { setupServer, type SetupServerApi } from 'npm:msw@2.11.6/node'
 import { assert, assertEquals, assertInstanceOf, z } from '../dev_deps.ts'
 import { FetchError, fx, SchemaError } from '../src/utils.ts'
 
