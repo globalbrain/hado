@@ -271,12 +271,11 @@ if (!(await Confirm.prompt({ message: `Bump ${dim(`(${manifest.version} → ${ne
 await step(`Updating version in ${manifestFile}`, async () => {
   manifest.version = newVersion
   await Deno.writeTextFile(manifestFile, JSON.stringify(manifest, null, 2))
-  await $`deno fmt ${manifestFile}`
 })
 
 await step('Generating changelog', async () => {
   await $`deno run -A --no-lock npm:conventional-changelog-cli -i CHANGELOG.md -s -p conventionalcommits -k deno.json`
-  await $`deno fmt CHANGELOG.md`
+  await $`deno task format`
 })
 
 if (!(await Confirm.prompt({ message: 'Changelog generated. Does it look good?' }))) Deno.exit()
