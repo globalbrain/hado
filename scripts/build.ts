@@ -1,4 +1,15 @@
-import { build, copy, denoPlugins, dirname, emptyDir, ensureDir, expandGlob, relative, tsid } from '../dev_deps.ts'
+import {
+  build,
+  copy,
+  denoPlugins,
+  dirname,
+  emptyDir,
+  ensureDir,
+  expandGlob,
+  parseArgs,
+  relative,
+  tsid,
+} from '../dev_deps.ts'
 
 const pick = [
   'name',
@@ -58,6 +69,11 @@ const external = [
 
 await emptyDir('dist')
 
+const args = parseArgs(Deno.args, {
+  boolean: ['minify', 'minify-identifiers', 'minify-syntax', 'minify-whitespace'],
+  default: { 'minify': null, 'minify-identifiers': null, 'minify-syntax': null, 'minify-whitespace': null },
+})
+
 const res = await build({
   plugins: [tsid({ include: entryPoints }), ...denoPlugins()],
   entryPoints,
@@ -68,8 +84,20 @@ const res = await build({
   target: 'es2022',
   external,
   metafile: true,
-  minify: Deno.args.includes('--minify'),
+  minify: args.minify ?? false,
+  minifyIdentifiers: args['minify-identifiers'] ?? args.minify ?? false,
+  minifySyntax: args['minify-syntax'] ?? args.minify ?? true,
+  minifyWhitespace: args['minify-whitespace'] ?? args.minify ?? false,
+  write: false,
 })
+
+await Promise.all(
+  res.outputFiles.map(async (file) => {
+    await ensureDir(dirname(file.path))
+    const stripped = file.path.endsWith('.js') ? file.text.replace(/[ \t]*\/\*\*[^]*?\*\/\n?/g, '') : file.text
+    await Deno.writeTextFile(file.path, stripped)
+  }),
+)
 
 const outputs = Object.fromEntries(
   Object.entries(res.metafile.outputs).flatMap(([key, value]) =>
