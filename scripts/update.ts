@@ -8,32 +8,34 @@
 
 import {
   $,
-  as,
   assertExists,
+  createCache,
   createGraph,
   type DependencyJson,
-  ensure,
-  filterEntries,
   fromFileUrl,
-  is,
-  loadGraph,
   parseArgs,
   parseFromJson,
   resolve,
-  type ResolvedDependency,
   SemVer,
   toFileUrl,
+  z,
 } from '../dev_deps.ts'
 
 // #region Vendored constants
 
 const supportedProtocols = ['npm:', 'jsr:', 'http:', 'https:'] as const
 
-const isNpmPackageMeta = is.ObjectOf({ 'dist-tags': is.RecordOf(is.String, is.String) })
-
-const isJsrPackageMeta = is.ObjectOf({
-  versions: is.RecordOf(is.ObjectOf({ yanked: as.Optional(is.Boolean) }), is.String),
+const isNpmPackageMeta = z.object({
+  'dist-tags': z.record(z.string(), z.string()),
+  'versions': z.record(z.string(), z.object({})),
 })
+
+const isJsrPackageMeta = z.object({
+  'latest': z.string().nullable(),
+  'versions': z.record(z.string(), z.object({ yanked: z.boolean().optional() })),
+})
+
+const isGhPackageMeta = z.array(z.object({ name: z.string() }))
 
 // #endregion
 
@@ -42,7 +44,8 @@ const excludes = (args.x ?? []) as string[]
 
 // update deps in deno.json
 
-let importMap = await Deno.readTextFile('deno.json')
+const importMapUrl = toFileUrl(resolve('deno.json'))
+let importMap = await Deno.readTextFile(importMapUrl)
 const denoJson = JSON.parse(importMap) as { imports: Record<string, string> | undefined }
 
 denoJson.imports = Object.fromEntries(
@@ -57,13 +60,8 @@ await $`deno fmt deno.json`
 // update deps in files
 
 const files = (await $`git ls-files -- '*.ts'`.lines()).filter(Boolean).map((file) => toFileUrl(resolve(file)).href)
-
-const resolvedImportMap = await parseFromJson(toFileUrl(resolve('deno.json')), importMap, { expandImports: true })
-
-const graph = await createGraph(files, {
-  resolve: resolvedImportMap.resolve.bind(resolvedImportMap),
-  load: async (specifier) => files.includes(specifier) ? await loadGraph(specifier) : undefined,
-})
+const resolvedImportMap = parseFromJson(importMapUrl, importMap, { expandImports: true })
+const graph = await createGraph(files, { ...createCache(), resolve: resolvedImportMap.resolve.bind(resolvedImportMap) })
 
 await Promise.all(graph.modules.map((mod) => updateDepsInFile(mod.specifier, mod.dependencies)))
 
@@ -85,35 +83,15 @@ async function updateDepsInFile(url: string, deps?: DependencyJson[]) {
   const path = fromFileUrl(url)
 
   const file = await Deno.readFile(path)
-  const text = new TextDecoder().decode(file)
-  const lines = text.split('\n')
+  let text = new TextDecoder().decode(file)
 
-  async function updateLine(dep?: ResolvedDependency) {
-    if (!dep?.specifier) return
-
-    const start = dep.span.start.line
-    const startChar = dep.span.start.character + 1
-    const end = dep.span.end.line
-    const endChar = dep.span.end.character - 1
-
-    if (start !== end) {
-      console.log(`Span is multiline, skipping update for ${dep.specifier} in ${path}`)
-      return
-    }
-
+  await Promise.all(deps.map(async (dep) => {
     const newSpecifier = await updateSpecifier(dep.specifier)
     if (newSpecifier === dep.specifier) return
+    text = text.replaceAll(dep.specifier, newSpecifier)
+  }))
 
-    const newLine = lines[start]!.slice(0, startChar) + newSpecifier + lines[start]!.slice(endChar)
-    lines[start] = newLine
-  }
-
-  for (const dep of deps) {
-    await updateLine(dep.code)
-    await updateLine(dep.type)
-  }
-
-  await Deno.writeTextFile(path, lines.join('\n'))
+  await Deno.writeTextFile(path, text)
 }
 
 async function updateSpecifier(specifier: string) {
@@ -128,7 +106,7 @@ async function updateSpecifier(specifier: string) {
     parsed.version = parsed.version.slice(1)
   }
 
-  const resolved = await resolveLatestVersion(parsed, { allowPreRelease: isPreRelease(parsed.version!) })
+  const resolved = await resolveLatestVersion(parsed)
   if (!resolved) {
     console.log(`Could not resolve latest version for ${specifier}`)
     return specifier
@@ -298,73 +276,56 @@ function stringifyDependency(
  * // -> { name: "deno.land/std", version: "0.207.0", path: "/fs/mod.ts" }
  * ```
  */
-async function resolveLatestVersion(
-  dependency: Dependency,
-  options?: { allowPreRelease?: boolean },
-): Promise<UpdatedDependency | undefined> {
+function resolveLatestVersion(dependency: Dependency): Promise<UpdatedDependency | undefined> {
   const constraint = dependency.version ? SemVer.tryParseRange(dependency.version) : undefined
-  if (constraint && constraint.flat().length > 1) return
-  return await _resolveLatestVersion(dependency, options)
+  if (constraint && constraint.flat().length > 1) return Promise.resolve(undefined)
+  return _resolveLatestVersion(dependency)
 }
 
-async function _resolveLatestVersion(
-  dependency: Dependency,
-  options?: { allowPreRelease?: boolean },
-): Promise<UpdatedDependency | undefined> {
-  function _isPreRelease(version: string | SemVer.SemVer): boolean {
-    if (options?.allowPreRelease) return false
-    return isPreRelease(version)
-  }
+async function _resolveLatestVersion(dependency: Dependency): Promise<UpdatedDependency | undefined> {
   switch (dependency.protocol) {
     case 'npm:': {
       const response = await fetch(`https://registry.npmjs.org/${dependency.name}`)
       if (!response.ok) break
-      const pkg = ensure(await response.json(), isNpmPackageMeta, {
-        message: `Invalid response from NPM registry: ${response.url}`,
-      })
-      const latest = SemVer.tryParse(pkg['dist-tags'].latest!)
-      const current = SemVer.tryParse(pkg['dist-tags'][dependency.version || 'latest'] || dependency.version!)
-      if (!latest || _isPreRelease(latest) || !current) break
-      if (SemVer.compare(latest, current) > 0) return { ...dependency, version: SemVer.format(latest) }
-      const tag = current?.prerelease?.[0]
-      if (typeof tag === 'string') {
-        for (const version of Object.values(pkg['dist-tags'])) {
-          const semver = SemVer.tryParse(version)
-          if (semver?.prerelease?.[0] === tag && SemVer.compare(semver, current) > 0) {
-            return { ...dependency, version: SemVer.format(semver) }
-          }
-        }
-      }
-      return dependency as UpdatedDependency
+      const pkg = isNpmPackageMeta.parse(await response.json())
+      const latestVersion = getLatestVersion(
+        Object.keys(pkg.versions),
+        dependency.version,
+        pkg['dist-tags'],
+      )
+      if (!latestVersion) break
+      return { ...dependency, version: latestVersion }
     }
+
     case 'jsr:': {
       const response = await fetch(`https://jsr.io/${dependency.name}/meta.json`)
       if (!response.ok) break
-      const meta = ensure(await response.json(), isJsrPackageMeta, {
-        message: `Invalid response from JSR registry: ${response.url}`,
-      })
-      const candidates = filterEntries(meta.versions, ([version, { yanked }]) => !yanked && !_isPreRelease(version))
-      const semvers = Object.keys(candidates).map(SemVer.parse)
-      if (!semvers.length) break
-      const latest = SemVer.format(semvers.sort(SemVer.compare).reverse()[0]!)
-      if (_isPreRelease(latest)) break
-      return { ...dependency, version: latest }
+      const meta = isJsrPackageMeta.parse(await response.json())
+      const latestVersion = getLatestVersion(
+        Object.entries(meta.versions).filter(([_, { yanked }]) => !yanked).map(([version]) => version),
+        dependency.version,
+        meta.latest ? { latest: meta.latest } : {},
+      )
+      if (!latestVersion) break
+      return { ...dependency, version: latestVersion }
     }
+
     case 'http:':
     case 'https:': {
       if (isGithub(dependency)) {
         const response = await fetch(`https://api.github.com/repos/${dependency.name.slice(26)}/tags`)
         if (!response.ok) break
-        const tags = await response.json()
-        if (!Array.isArray(tags) || tags.length === 0) break
-        const versions = tags.map((tag) => SemVer.tryParse(tag.name)).filter((version): version is SemVer.SemVer =>
-          !!version && !_isPreRelease(version)
+        const tags = isGhPackageMeta.parse(await response.json())
+        const hasVPrefix = !!tags[0]?.name.startsWith('v')
+        const latestVersion = getLatestVersion(
+          tags.map((tag) => tag.name.slice(hasVPrefix ? 1 : 0)),
+          dependency.version?.slice(hasVPrefix ? 1 : 0),
+          {},
         )
-        if (versions.length === 0) break
-        const latest = versions.sort(SemVer.compare).reverse()[0]
-        if (!latest) break
-        return { ...dependency, version: 'v' + SemVer.format(latest) }
+        if (!latestVersion) break
+        return { ...dependency, version: (hasVPrefix ? 'v' : '') + latestVersion }
       }
+
       const response = await fetch(
         addSeparator(dependency.protocol) + dependency.name,
         { method: 'GET' },
@@ -372,7 +333,7 @@ async function _resolveLatestVersion(
       await response.arrayBuffer()
       if (!response.redirected) break
       const redirected = parseDependency(response.url + dependency.path)
-      if (!redirected.version || _isPreRelease(redirected.version)) break
+      if (!redirected.version) break
       const latest = redirected as UpdatedDependency
       return { ...latest, path: dependency.path === '/' ? '/' : latest.path }
     }
@@ -380,18 +341,27 @@ async function _resolveLatestVersion(
   return
 }
 
-/**
- * Check if the given version string represents a pre-release.
- *
- * @example
- * ```ts
- * isPreRelease("0.1.0"); // -> false
- * isPreRelease("0.1.0-alpha.1"); // -> true
- * ```
- */
-function isPreRelease(version: string | SemVer.SemVer | undefined): boolean {
-  const parsed = typeof version === 'string' ? SemVer.tryParse(version) : version
-  return (parsed?.prerelease?.length ?? -1) > 0
+export function getLatestVersion(
+  _versions: string[],
+  currentVersion: string | undefined,
+  distTags: Record<string, string>,
+): string | undefined {
+  if (_versions.length === 0) return
+
+  const versions = _versions.map((v) => SemVer.parse(v)).sort(SemVer.compare).reverse()
+  const latest = distTags.latest ? SemVer.parse(distTags.latest) : versions[0]!
+
+  const current = currentVersion ? SemVer.parse(currentVersion) : latest
+  if (SemVer.compare(latest, current) >= 0) return SemVer.format(latest)
+
+  const range = SemVer.parseRange('^' + currentVersion)
+  for (const version of versions) {
+    if (SemVer.satisfies(version, range) && SemVer.compare(version, current) >= 0) {
+      return SemVer.format(version)
+    }
+  }
+
+  return
 }
 
 function isGithub(dependency: Dependency): boolean {
@@ -403,4 +373,5 @@ function isGithub(dependency: Dependency): boolean {
 /**
  * TODO:
  * - remove vendored code when https://github.com/hasundue/molt/issues/194 and https://github.com/hasundue/molt/issues/195 are resolved
+ * - use dep.code.span / dep.type.span to update lines instead of replaceAll when https://github.com/denoland/deno_graph/issues/80 is fixed
  */

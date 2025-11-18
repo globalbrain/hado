@@ -1,14 +1,17 @@
 import {
-  build,
   copy,
-  denoPlugins,
   dirname,
   emptyDir,
   ensureDir,
+  esbuild,
+  esbuildDenoPlugin,
+  esbuildDts,
   expandGlob,
   parseArgs,
   relative,
-  tsid,
+  rolldown,
+  rolldownDenoPlugin,
+  rolldownDts,
 } from '../dev_deps.ts'
 
 const pick = [
@@ -70,40 +73,83 @@ const external = [
 await emptyDir('dist')
 
 const args = parseArgs(Deno.args, {
+  string: ['bundler'],
   boolean: ['minify', 'minify-identifiers', 'minify-syntax', 'minify-whitespace'],
-  default: { 'minify': null, 'minify-identifiers': null, 'minify-syntax': null, 'minify-whitespace': null },
+  default: {
+    'minify': null,
+    'minify-identifiers': null,
+    'minify-syntax': null,
+    'minify-whitespace': null,
+    'bundler': 'esbuild',
+  },
 })
 
-const res = await build({
-  plugins: [tsid({ include: entryPoints }), ...denoPlugins()],
-  entryPoints,
-  outdir: 'dist',
-  bundle: true,
-  format: 'esm',
-  platform: 'neutral',
-  target: 'es2022',
-  external,
-  metafile: true,
-  minify: args.minify ?? false,
-  minifyIdentifiers: args['minify-identifiers'] ?? args.minify ?? false,
-  minifySyntax: args['minify-syntax'] ?? args.minify ?? true,
-  minifyWhitespace: args['minify-whitespace'] ?? args.minify ?? false,
-  write: false,
-})
+if (!['esbuild', 'rolldown'].includes(args.bundler)) {
+  console.error(`Invalid bundler: ${args.bundler}. Only 'esbuild' and 'rolldown' are supported.`)
+  Deno.exit(1)
+}
 
-await Promise.all(
-  res.outputFiles.map(async (file) => {
-    await ensureDir(dirname(file.path))
-    const stripped = file.path.endsWith('.js') ? file.text.replace(/[ \t]*\/\*\*[^]*?\*\/\n?/g, '') : file.text
-    await Deno.writeTextFile(file.path, stripped)
-  }),
-)
+const outputs = await (args.bundler === 'rolldown' ? useRolldown : useEsbuild)()
 
-const outputs = Object.fromEntries(
-  Object.entries(res.metafile.outputs).flatMap(([key, value]) =>
-    value.entryPoint ? [['./' + value.entryPoint, key.replace('dist/', './')]] : []
-  ),
-)
+async function useRolldown(): Promise<Record<string, string>> {
+  const res = await rolldown({
+    input: entryPoints,
+    output: {
+      dir: 'dist',
+      format: 'esm',
+      minify: {
+        codegen: args['minify-whitespace'] ?? args.minify ?? false,
+        compress: args['minify-syntax'] ?? args.minify ?? true,
+        mangle: args['minify-identifiers'] ?? args.minify ?? false,
+      },
+    },
+    platform: 'neutral',
+    transform: { target: 'es2020' },
+    external,
+    plugins: [rolldownDts(), rolldownDenoPlugin()],
+  })
+
+  return Object.fromEntries(
+    res.output.flatMap((chunk) =>
+      chunk.type === 'chunk' && chunk.isEntry && chunk.facadeModuleId
+        ? [['./' + relative(Deno.cwd(), chunk.facadeModuleId), './' + chunk.fileName]]
+        : []
+    ),
+  )
+}
+
+async function useEsbuild(): Promise<Record<string, string>> {
+  const res = await esbuild({
+    plugins: [esbuildDts({ include: entryPoints }), ...esbuildDenoPlugin()],
+    entryPoints,
+    outdir: 'dist',
+    bundle: true,
+    format: 'esm',
+    platform: 'neutral',
+    target: 'es2022',
+    external,
+    metafile: true,
+    minify: args.minify ?? false,
+    minifyIdentifiers: args['minify-identifiers'] ?? args.minify ?? false,
+    minifySyntax: args['minify-syntax'] ?? args.minify ?? true,
+    minifyWhitespace: args['minify-whitespace'] ?? args.minify ?? false,
+    write: false,
+  })
+
+  await Promise.all(
+    res.outputFiles.map(async (file) => {
+      await ensureDir(dirname(file.path))
+      const stripped = file.path.endsWith('.js') ? file.text.replace(/[ \t]*\/\*\*[^]*?\*\/\n?/g, '') : file.text
+      await Deno.writeTextFile(file.path, stripped)
+    }),
+  )
+
+  return Object.fromEntries(
+    Object.entries(res.metafile.outputs).flatMap(([key, value]) =>
+      value.entryPoint ? [['./' + value.entryPoint, key.replace('dist/', './')]] : []
+    ),
+  )
+}
 
 await Deno.writeTextFile(
   'dist/package.json',
@@ -111,9 +157,7 @@ await Deno.writeTextFile(
     {
       ...Object.fromEntries(pick.map((key) => [key, denoJson[key]])),
       type: 'module',
-      exports: Object.fromEntries(
-        Object.entries(exports).map(([key, value]) => [key, outputs[value]]),
-      ),
+      exports: Object.fromEntries(Object.entries(exports).map(([key, value]) => [key, outputs[value]])),
       dependencies,
       optionalDependencies,
       peerDependencies,
@@ -138,8 +182,3 @@ await Promise.all(
       )
     }),
 )
-
-/**
- * TODO:
- * - use tsdown when https://github.com/denoland/deno-rolldown-plugin starts working
- */
