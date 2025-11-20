@@ -73,14 +73,15 @@ const external = [
 await emptyDir('dist')
 
 const args = parseArgs(Deno.args, {
-  string: ['bundler'],
+  string: ['bundler', 'jsr-name'],
   boolean: ['minify', 'minify-identifiers', 'minify-syntax', 'minify-whitespace'],
   default: {
+    'bundler': 'esbuild',
+    'jsr-name': null,
     'minify': null,
     'minify-identifiers': null,
     'minify-syntax': null,
     'minify-whitespace': null,
-    'bundler': 'esbuild',
   },
 })
 
@@ -106,7 +107,23 @@ async function useRolldown(): Promise<Record<string, string>> {
     platform: 'neutral',
     transform: { target: 'es2020' },
     external,
-    plugins: [rolldownDts(), rolldownDenoPlugin()],
+    plugins: [
+      rolldownDts(),
+      rolldownDenoPlugin(),
+      {
+        name: 'custom:ts-self-types',
+        generateBundle(_, bundle) {
+          for (const file of Object.keys(bundle)) {
+            if (file.endsWith('.js')) {
+              const chunk = bundle[file]
+              if (chunk?.type === 'chunk') {
+                chunk.code = `/* @ts-self-types="./${file.replace(/\.js$/, '.d.ts')}" */\n` + chunk.code
+              }
+            }
+          }
+        },
+      },
+    ],
   })
 
   return Object.fromEntries(
@@ -139,34 +156,42 @@ async function useEsbuild(): Promise<Record<string, string>> {
   await Promise.all(
     res.outputFiles.map(async (file) => {
       await ensureDir(dirname(file.path))
-      const stripped = file.path.endsWith('.js') ? file.text.replace(/[ \t]*\/\*\*[^]*?\*\/\n?/g, '') : file.text
-      await Deno.writeTextFile(file.path, stripped)
+      let text = file.text
+      if (file.path.endsWith('.js')) {
+        const dts = relative(Deno.cwd(), file.path).replace(/^dist\//, '').replace(/\.js$/, '.d.ts')
+        text = `/* @ts-self-types="./${dts}" */\n` + text.replace(/[ \t]*\/\*\*[^]*?\*\/\n?/g, '')
+      }
+      await Deno.writeTextFile(file.path, text)
     }),
   )
 
   return Object.fromEntries(
     Object.entries(res.metafile.outputs).flatMap(([key, value]) =>
-      value.entryPoint ? [['./' + value.entryPoint, key.replace('dist/', './')]] : []
+      value.entryPoint ? [['./' + value.entryPoint, key.replace(/^dist\//, './')]] : []
     ),
   )
 }
 
-await Deno.writeTextFile(
-  'dist/package.json',
-  JSON.stringify(
-    {
-      ...Object.fromEntries(pick.map((key) => [key, denoJson[key]])),
-      type: 'module',
-      exports: Object.fromEntries(Object.entries(exports).map(([key, value]) => [key, outputs[value]])),
-      dependencies,
-      optionalDependencies,
-      peerDependencies,
-      peerDependenciesMeta,
-    },
-    null,
-    2,
-  ),
-)
+const pkg: Record<string, unknown> = {
+  ...Object.fromEntries(pick.map((key) => [key, denoJson[key]])),
+  type: 'module',
+  exports: Object.fromEntries(Object.entries(exports).map(([key, value]) => [key, outputs[value]])),
+  dependencies,
+  optionalDependencies,
+  peerDependencies,
+  peerDependenciesMeta,
+}
+
+const jsr = {
+  name: args['jsr-name'] ?? pkg.name,
+  version: pkg.version,
+  license: pkg.license,
+  exports: pkg.exports,
+  publish: { exclude: ['!.'] },
+}
+
+await Deno.writeTextFile('dist/package.json', JSON.stringify(pkg, null, 2))
+await Deno.writeTextFile('dist/jsr.json', JSON.stringify(jsr, null, 2))
 
 await Promise.all(
   [...(denoJson.publish?.include ?? []), 'license', 'license.*', 'changelog', 'changelog.*', 'readme', 'readme.*']
@@ -182,3 +207,8 @@ await Promise.all(
       )
     }),
 )
+
+/**
+ * TODO:
+ * - Adjust banner code for rolldown when https://github.com/rolldown/rolldown/issues/6790 is fixed.
+ */
