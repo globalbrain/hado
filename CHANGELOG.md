@@ -1,3 +1,5 @@
+## [0.19.6](https://github.com/globalbrain/hado/compare/v0.19.5...v0.19.6) (2025-11-20)
+
 ## [0.19.5](https://github.com/globalbrain/hado/compare/v0.19.4...v0.19.5) (2025-11-18)
 
 ## [0.19.4](https://github.com/globalbrain/hado/compare/v0.19.3...v0.19.4) (2025-11-03)
