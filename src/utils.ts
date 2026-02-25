@@ -26,8 +26,8 @@
  *       https://github.com/standard-schema/standard-schema/blob/a9d5e3522259f70938a5b0c125a19d671c975fd9/packages/utils/src/SchemaError/SchemaError.ts
  */
 
-import type { StandardSchemaV1 } from 'jsr:@standard-schema/spec@1.0.0'
-import { delay } from 'jsr:@std/async@^1.0.15/delay'
+import type { StandardSchemaV1 } from 'jsr:@standard-schema/spec@1.1.0'
+import { delay } from 'jsr:@std/async@^1.2.0/delay'
 
 // #region Types
 

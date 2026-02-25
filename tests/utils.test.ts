@@ -1,5 +1,5 @@
-import { delay, http, HttpResponse } from 'npm:msw@2.12.2'
-import { setupServer, type SetupServerApi } from 'npm:msw@2.12.2/node'
+import { delay, http } from 'npm:msw@2.12.10'
+import { setupServer, type SetupServerApi } from 'npm:msw@2.12.10/node'
 import { assert, assertEquals, assertInstanceOf, z } from '../dev_deps.ts'
 import { FetchError, fx, SchemaError } from '../src/utils.ts'
 
@@ -32,6 +32,13 @@ const baseOptions = {
   }),
 }
 
+const Response = globalThis.Response as typeof globalThis.Response & {
+  text: (body: string, init?: ResponseInit) => Response
+}
+Response.text = (body: string, init?: ResponseInit) => {
+  return new Response(body, { ...init, headers: { 'Content-Type': 'text/plain', ...init?.headers } })
+}
+
 Deno.test('utils', async (t) => {
   // #region Setup
   using server = new Server()
@@ -44,7 +51,7 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }),
+            () => Response.json({ id: 1, todo: 'Todo 1' }),
           ),
         )
 
@@ -62,7 +69,7 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/999',
-            () => HttpResponse.text('Not Found', { status: 404 }),
+            () => Response.text('Not Found', { status: 404 }),
           ),
         )
 
@@ -81,12 +88,12 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.error(),
+            () => Response.text('Internal Server Error', { status: 500 }),
             { once: true },
           ),
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }),
+            () => Response.json({ id: 1, todo: 'Todo 1' }),
           ),
         )
 
@@ -103,7 +110,7 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 'invalid', todo: 123 }),
+            () => Response.json({ id: 'invalid', todo: 123 }),
           ),
         )
 
@@ -124,7 +131,7 @@ Deno.test('utils', async (t) => {
             'https://example.com/todos/1',
             async () => {
               await delay(100) // Simulate a long response
-              return HttpResponse.json({ id: 1, todo: 'Todo 1' })
+              return Response.json({ id: 1, todo: 'Todo 1' })
             },
           ),
         )
@@ -147,11 +154,11 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }),
+            () => Response.json({ id: 1, todo: 'Todo 1' }),
           ),
           http.get(
             'https://example.com/todos/2',
-            () => HttpResponse.json({ id: 2, todo: 'Todo 2' }),
+            () => Response.json({ id: 2, todo: 'Todo 2' }),
           ),
         )
 
@@ -175,11 +182,11 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }),
+            () => Response.json({ id: 1, todo: 'Todo 1' }),
           ),
           http.get(
             'https://example.com/todos/999',
-            () => HttpResponse.text('Not Found', { status: 404 }),
+            () => Response.text('Not Found', { status: 404 }),
           ),
         )
 
@@ -206,21 +213,21 @@ Deno.test('utils', async (t) => {
             'https://example.com/todos/1',
             async () => {
               await delay(50)
-              return HttpResponse.json({ id: 1, todo: 'Todo 1' })
+              return Response.json({ id: 1, todo: 'Todo 1' })
             },
           ),
           http.get(
             'https://example.com/todos/2',
             async () => {
               await delay(50)
-              return HttpResponse.json({ id: 2, todo: 'Todo 2' })
+              return Response.json({ id: 2, todo: 'Todo 2' })
             },
           ),
           http.get(
             'https://example.com/todos/3',
             async () => {
               await delay(50)
-              return HttpResponse.json({ id: 3, todo: 'Todo 3' })
+              return Response.json({ id: 3, todo: 'Todo 3' })
             },
           ),
         )
@@ -255,21 +262,21 @@ Deno.test('utils', async (t) => {
             'https://example.com/todos/1',
             async () => {
               await delay(50)
-              return HttpResponse.json({ id: 1, todo: 'Todo 1' })
+              return Response.json({ id: 1, todo: 'Todo 1' })
             },
           ),
           http.get(
             'https://example.com/todos/2',
             async () => {
               await delay(10)
-              return HttpResponse.json({ id: 2, todo: 'Todo 2' })
+              return Response.json({ id: 2, todo: 'Todo 2' })
             },
           ),
           http.get(
             'https://example.com/todos/3',
             async () => {
               await delay(30)
-              return HttpResponse.json({ id: 3, todo: 'Todo 3' })
+              return Response.json({ id: 3, todo: 'Todo 3' })
             },
           ),
         )
@@ -297,15 +304,15 @@ Deno.test('utils', async (t) => {
         server.use(
           http.get(
             'https://example.com/todos/1',
-            () => HttpResponse.json({ id: 1, todo: 'Todo 1' }), // Success
+            () => Response.json({ id: 1, todo: 'Todo 1' }), // Success
           ),
           http.get(
             'https://example.com/todos/2',
-            () => HttpResponse.text('Server Error', { status: 500 }), // Failure
+            () => Response.text('Server Error', { status: 500 }), // Failure
           ),
           http.get(
             'https://example.com/todos/3',
-            () => HttpResponse.json({ id: 3, todo: 'Todo 3' }), // Success
+            () => Response.json({ id: 3, todo: 'Todo 3' }), // Success
           ),
         )
 

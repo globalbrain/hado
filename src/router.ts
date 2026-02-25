@@ -20,12 +20,12 @@
  *       https://github.com/denoland/std/blob/49c117d2ef4626c4f3f061268f3adb0e4f083c5b/http/file_server.ts
  */
 
-import { debounce } from 'jsr:@std/async@^1.0.15/debounce'
-import { walk } from 'jsr:@std/fs@^1.0.20/walk'
-import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.0.22/file-server'
-import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.22/status'
-import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.3/posix/normalize'
-import { toFileUrl } from 'jsr:@std/path@^1.1.3/to-file-url'
+import { debounce } from 'jsr:@std/async@^1.2.0/debounce'
+import { walk } from 'jsr:@std/fs@^1.0.23/walk'
+import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.0.25/file-server'
+import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.0.25/status'
+import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.4/posix/normalize'
+import { toFileUrl } from 'jsr:@std/path@^1.1.4/to-file-url'
 
 const methods = new Set(['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'PATCH'])
 
