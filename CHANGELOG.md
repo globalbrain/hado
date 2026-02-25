@@ -1,3 +1,13 @@
+## [0.20.0](https://github.com/globalbrain/hado/compare/v0.19.6...v0.20.0) (2026-02-25)
+
+### ⚠ BREAKING CHANGES
+
+- `src/sentry.ts` no longer exports/uses the custom `denoServerIntegration`, `instrumentDenoServe`, and related helpers. Consumers calling those functions directly must migrate to the built-in Sentry behavior.
+
+### Features
+
+- switch to built-in Sentry Deno server integration and upgrade deps ([85c65b7](https://github.com/globalbrain/hado/commit/85c65b771d6038a29dee7d7ba275e8fd3b8009a5))
+
 ## [0.19.6](https://github.com/globalbrain/hado/compare/v0.19.5...v0.19.6) (2025-11-20)
 
 ## [0.19.5](https://github.com/globalbrain/hado/compare/v0.19.4...v0.19.5) (2025-11-18)
