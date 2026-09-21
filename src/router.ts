@@ -374,7 +374,8 @@ export async function createRouter(
       if (result !== null) return (await getHandler(result.match, req.method))!(req, result.params)
     }
 
-    if (statik?.fsRoot) return serveDir(req, { quiet: true, ...statik })
+    // a percent-encoded backslash is a path separator on windows, which bypasses the posix based checks of serveDir
+    if (statik?.fsRoot && !decodedUrl.includes('\\')) return serveDir(req, { quiet: true, ...statik })
 
     return createStandardResponse(STATUS_CODE.NotFound)
   }

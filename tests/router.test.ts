@@ -162,6 +162,34 @@ Deno.test('router', async (t) => {
     assertEquals(res.headers.get('content-length'), String('GET /index.ts = {}'.length)) // same as GET
     assertEquals(res.headers.get('content-encoding'), null)
   })
+
+  await t.step('static fallback rejects percent-encoded backslashes', async () => {
+    using temp = new TempDir()
+
+    // the last one is a file with a backslash in its name on posix, and a file inside a directory on windows
+    for (const file of ['/public/file.txt', '/public/a\\b.txt']) {
+      await Deno.mkdir(dirname(temp.path + file), { recursive: true })
+      await Deno.writeTextFile(temp.path + file, 'static')
+    }
+
+    await Deno.mkdir(temp.path + '/api')
+    const { handler } = await createRouter({
+      fsRoot: temp.path + '/api',
+      urlRoot: 'api',
+      static: { fsRoot: temp.path + '/public' },
+    })
+    using server = new Server(handler)
+
+    const base = `http://${server.addr.hostname}:${server.addr.port}`
+
+    const served = await fetch(`${base}/file.txt`)
+    assertEquals(served.status, 200)
+    assertEquals(await served.text(), 'static')
+
+    const rejected = await fetch(`${base}/a%5Cb.txt`)
+    assertEquals(rejected.status, 404)
+    assertEquals(await rejected.text(), 'Not Found')
+  })
 })
 
 // TODO: maybe use @std/testing/bdd and @std/expect for more familiar API
