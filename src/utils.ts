@@ -271,7 +271,7 @@ class Semaphore {
 // #region Logic
 
 const pools = new Map<string, Semaphore>()
-const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE'])
+const idempotentMethods = new Set(['GET', 'HEAD', 'PUT', 'DELETE', 'OPTIONS', 'TRACE', 'QUERY'])
 const transientStatusCodes = new Set([408, 429, 500, 502, 503, 504])
 
 /**
