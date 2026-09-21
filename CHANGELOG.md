@@ -1,3 +1,22 @@
+## [0.21.0](https://github.com/globalbrain/hado/compare/v0.20.0...v0.21.0) (2026-09-21)
+
+### ⚠ BREAKING CHANGES
+
+- **utils:** Support for Deno <2.7.13 is dropped.
+
+### Features
+
+- **utils:** retry QUERY requests ([5fac520](https://github.com/globalbrain/hado/commit/5fac5200d6c695ccf7a041ad67ac611f65ee2089))
+
+### Bug Fixes
+
+- **router:** reject percent-encoded backslashes in static paths ([34c12d5](https://github.com/globalbrain/hado/commit/34c12d52d21350d4ef1aacfc4657010b1ae8a3c2))
+- **router:** send the same content-length for HEAD as for GET ([7ef9ae8](https://github.com/globalbrain/hado/commit/7ef9ae82dec762f9fc1437ed954c9c8b8b014e3b))
+- **utils:** reject a non-positive concurrency ([b42d891](https://github.com/globalbrain/hado/commit/b42d8913484bdd9e2c17354471268d54da7c840f))
+- **utils:** replay the request body on retries ([2d5e436](https://github.com/globalbrain/hado/commit/2d5e4365c25210c7c7f77251a00ae7c8f59e0559))
+- **utils:** stop waiting for retry-after once the request is aborted ([fc62f81](https://github.com/globalbrain/hado/commit/fc62f81ad0af3178af179583e1968e6ff01853bb))
+- **utils:** use the new timer internals of deno in timeoutSignal ([145232d](https://github.com/globalbrain/hado/commit/145232daef9fbdb46bd09064de9a9481845f7fb9))
+
 ## [0.20.0](https://github.com/globalbrain/hado/compare/v0.19.6...v0.20.0) (2026-02-25)
 
 ### ⚠ BREAKING CHANGES
