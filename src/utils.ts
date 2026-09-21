@@ -358,17 +358,14 @@ async function _fetch(
 ): Promise<Response> {
   if (!idempotentMethods.has(req.method)) maxAttempts = 1
   const maxRetryAfter = Date.now() + maxAttempts * timeout
+  const signals = parentSignal ? [req.signal, parentSignal] : [req.signal]
 
   let lastError: unknown
 
   while (maxAttempts-- > 0) {
     try {
       const res = await fetch(req, {
-        signal: AbortSignal.any([
-          req.signal,
-          timeoutSignal(timeout, `Request timed out after ${timeout}ms`),
-          ...(parentSignal ? [parentSignal] : []),
-        ]),
+        signal: AbortSignal.any([...signals, timeoutSignal(timeout, `Request timed out after ${timeout}ms`)]),
       })
 
       if (res.ok) return res
@@ -378,7 +375,8 @@ async function _fetch(
     } catch (error: unknown) {
       lastError = error
 
-      if (maxAttempts <= 0 || parentSignal?.aborted) break // no more attempts left or outer deadline exceeded
+      // no more attempts left, request aborted or outer deadline exceeded
+      if (maxAttempts <= 0 || signals.some((s) => s.aborted)) break
 
       if (error instanceof FetchError && transientStatusCodes.has(error.response.status)) {
         const header = error.response.headers.get('Retry-After')
@@ -389,7 +387,7 @@ async function _fetch(
           if (Number.isNaN(wait)) wait = Date.parse(header) - Date.now()
           if (Number.isNaN(wait) || Date.now() + wait >= maxRetryAfter) break // invalid header or too long to wait
 
-          if (wait > 0) await delay(wait, { signal: parentSignal }) // wait before retrying
+          if (wait > 0) await delay(wait, { signal: AbortSignal.any(signals) }) // wait before retrying
         }
       }
     }
