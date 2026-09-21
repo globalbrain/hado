@@ -26,6 +26,6 @@ export { z } from 'npm:zod@4.6.5'
 
 export const $ = new Proxy(_$, {
   apply(target, thisArg, args: Parameters<$Type>) {
-    return Reflect.apply(target.raw, thisArg, args).quiet()
+    return Reflect.apply(target.raw, thisArg, args).quiet().errorTail()
   },
 })
