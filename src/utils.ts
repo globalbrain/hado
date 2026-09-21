@@ -27,7 +27,7 @@
  */
 
 import type { StandardSchemaV1 } from 'jsr:@standard-schema/spec@1.1.0'
-import { delay } from 'jsr:@std/async@^1.2.0/delay'
+import { delay } from 'jsr:@std/async@^1.5.0/delay'
 
 // #region Types
 

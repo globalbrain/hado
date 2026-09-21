@@ -1,10 +1,10 @@
-import { delay, http } from 'npm:msw@2.12.10'
-import { setupServer, type SetupServerApi } from 'npm:msw@2.12.10/node'
+import { delay, http } from 'npm:msw@2.15.0'
+import { type SetupServer, setupServer } from 'npm:msw@2.15.0/node'
 import { assert, assertEquals, assertInstanceOf, z } from '../dev_deps.ts'
 import { FetchError, fx, SchemaError } from '../src/utils.ts'
 
 class Server {
-  #server: SetupServerApi
+  #server: SetupServer
 
   constructor() {
     this.#server = setupServer()
