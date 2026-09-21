@@ -402,14 +402,10 @@ async function _fetch(
 
 // #region Internals
 
-const queueSystemTimer: (
-  // deno-lint-ignore ban-types
-  associatedOp: Function | undefined,
-  repeat: boolean,
-  delay: number,
-  callback: () => void,
-  // deno-lint-ignore no-explicit-any
-) => number = (Deno as any)[(Deno as any).internal].core.queueSystemTimer
+// deno-lint-ignore no-explicit-any
+const core = (Deno as any)[(Deno as any).internal].core
+const createSystemTimer: (callback: () => void, ms: number, refed: boolean) => object = core.createSystemTimer
+const cancelTimer: (timer: object) => void = core.cancelTimer
 const timerId: unique symbol = Object.getOwnPropertySymbols(AbortSignal.timeout(0))
   // deno-lint-ignore no-explicit-any
   .find((s) => s.description === '[[timerId]]') as any
@@ -425,22 +421,20 @@ const signalAbort: unique symbol = Object.getOwnPropertySymbols(AbortSignal.prot
  */
 export function timeoutSignal(ms: number, reason: string): AbortSignal {
   const signal = AbortSignal.timeout(0) as AbortSignal & {
-    [timerId]: number | null
+    [timerId]: object | null
     [signalAbort]: (reason: unknown) => void
   }
-  signal[timerId] != null && clearTimeout(signal[timerId])
+  signal[timerId] != null && cancelTimer(signal[timerId])
   const error = new TimeoutError(reason)
-  signal[timerId] = queueSystemTimer(
-    undefined,
-    false,
-    ms,
+  signal[timerId] = createSystemTimer(
     () => {
-      signal[timerId] != null && clearTimeout(signal[timerId])
+      signal[timerId] != null && cancelTimer(signal[timerId])
       signal[timerId] = null
       signal[signalAbort](error)
     },
+    ms,
+    false, // start unrefed, gets refed while there are abort listeners
   )
-  signal[timerId] != null && Deno.unrefTimer(signal[timerId])
   return signal
 }
 
