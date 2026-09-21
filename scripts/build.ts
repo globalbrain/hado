@@ -104,27 +104,15 @@ async function useRolldown(): Promise<Record<string, string>> {
         compress: args['minify-syntax'] ?? args.minify ?? true,
         mangle: args['minify-identifiers'] ?? args.minify ?? false,
       },
+      postBanner: (chunk) =>
+        chunk.isEntry && chunk.fileName.endsWith('.js')
+          ? `/* @ts-self-types="./${chunk.fileName.replace(/\.js$/, '.d.ts')}" */`
+          : null!, // null means no banner ('' adds an empty line), rolldown's binding accepts it but its types don't
     },
     platform: 'neutral',
     transform: { target: 'es2020' },
     external,
-    plugins: [
-      rolldownDts(),
-      rolldownDenoPlugin(),
-      {
-        name: 'custom:ts-self-types',
-        generateBundle(_, bundle) {
-          for (const file of Object.keys(bundle)) {
-            if (file.endsWith('.js')) {
-              const chunk = bundle[file]
-              if (chunk?.type === 'chunk') {
-                chunk.code = `/* @ts-self-types="./${file.replace(/\.js$/, '.d.ts')}" */\n` + chunk.code
-              }
-            }
-          }
-        },
-      },
-    ],
+    plugins: [rolldownDts(), rolldownDenoPlugin()],
   })
 
   return Object.fromEntries(
@@ -209,8 +197,3 @@ await Promise.all(
       )
     }),
 )
-
-/**
- * TODO:
- * - Adjust banner code for rolldown when https://github.com/rolldown/rolldown/issues/6790 is fixed.
- */
