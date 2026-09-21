@@ -312,8 +312,3 @@ await step('Creating a new release', async () => {
 })
 
 // #endregion
-
-/**
- * TODO:
- * - publish stuff from this script as standalone modules
- */

@@ -199,5 +199,3 @@ Deno.test('router', async (t) => {
     assertEquals(await rejected.text(), 'Not Found')
   })
 })
-
-// TODO: maybe use @std/testing/bdd and @std/expect for more familiar API
