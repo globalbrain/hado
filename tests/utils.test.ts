@@ -1,6 +1,6 @@
 import { delay, http } from 'npm:msw@2.15.0'
 import { type SetupServer, setupServer } from 'npm:msw@2.15.0/node'
-import { assert, assertEquals, assertInstanceOf, z } from '../dev_deps.ts'
+import { assert, assertEquals, assertInstanceOf, assertRejects, z } from '../dev_deps.ts'
 import { FetchError, fx, SchemaError } from '../src/utils.ts'
 
 class Server {
@@ -145,6 +145,18 @@ Deno.test('utils', async (t) => {
         assertEquals(result.error.message, 'Deadline of 50ms exceeded')
       }),
     )
+
+    await t.step('rejects a non-positive concurrency', async () => {
+      const request = new Request('https://example.com/todos/1')
+
+      for (const concurrency of [0, -1, NaN]) {
+        await assertRejects(
+          () => fx(request, { ...baseOptions, concurrency }),
+          RangeError,
+          "'concurrency' must be a positive number",
+        )
+      }
+    })
   })
 
   await t.step('fx.all', async (t) => {
