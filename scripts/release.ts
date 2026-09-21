@@ -272,7 +272,8 @@ await step(`Updating version in ${manifestFile}`, async () => {
 })
 
 await step('Generating changelog', async () => {
-  await $`deno run -A --no-lock --preload='data:application/javascript,import "npm:conventional-changelog-conventionalcommits"' \
+  await $`deno run -A --no-lock \
+    --preload='data:application/javascript,import "npm:conventional-changelog-conventionalcommits"' \
     npm:conventional-changelog -i CHANGELOG.md -s -p conventionalcommits -k deno.json`
   await $`deno task format`
 })

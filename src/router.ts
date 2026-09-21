@@ -420,7 +420,8 @@ function shouldProcessFile(path: string): boolean {
  * TODO:
  * - use URLPatternList once it's available (https://github.com/whatwg/urlpattern/pull/166)
  * - use iterative pattern if there is significant memory/performance improvement
- * - use more efficient LRU cache implementation (https://jsr.io/@std/cache) or Web Cache API (https://deno.com/blog/deploy-cache-api)
+ * - use more efficient LRU cache implementation (https://jsr.io/@std/cache) or Web Cache API
+ *   (https://deno.com/blog/deploy-cache-api)
  * - use eager loading in production mode
  * - don't destroy whole tree on single file change
  * - support deno deploy (https://github.com/denoland/deploy_feedback/issues/433), add services docs

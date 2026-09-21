@@ -129,7 +129,8 @@ export type Fx = {
    *
    * @template Schema An optional schema to validate the response body (for JSON responses).
    * @param requests An array of `Request` objects to fetch.
-   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout,
+   * and retry settings.
    * @returns A promise resolving to an array of result objects.
    */
   all: <Schema extends StandardSchemaV1 | undefined = undefined>(
@@ -142,7 +143,8 @@ export type Fx = {
    *
    * This function provides an `AsyncIterableIterator` that yields results for each request as soon as it completes,
    * preserving high throughput and allowing you to process data as it streams in.
-   * This is useful for a large number of requests where you don't want to wait for all of them to finish before processing.
+   * This is useful for a large number of requests where you don't want to wait for all of them to finish
+   * before processing.
    *
    * @example
    *
@@ -175,7 +177,8 @@ export type Fx = {
    * @template Schema An optional schema to validate the response body (for JSON responses).
    * @param items The array of items to be processed into requests.
    * @param toRequest A function that maps each item in `arr` to a `Request` object.
-   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+   * @param options Fetch options including a required pool key and optional schema, concurrency, timeout,
+   * and retry settings.
    * @returns An async iterable iterator yielding {@link ResponseOrError} objects as they become available.
    */
   iter: <T, Schema extends StandardSchemaV1 | undefined = undefined>(
@@ -482,7 +485,8 @@ export function timeoutSignal(ms: number, reason: string): AbortSignal {
  *
  * @template Schema An optional schema to validate the response body (for JSON responses).
  * @param request The request object to fetch.
- * @param options Fetch options including a required pool key and optional schema, concurrency, timeout, and retry settings.
+ * @param options Fetch options including a required pool key and optional schema, concurrency, timeout,
+ * and retry settings.
  * @returns A promise resolving to a single result object.
  */
 const fx: Fx = async (request, options) => {
