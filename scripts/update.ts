@@ -28,11 +28,12 @@ const supportedProtocols = ['npm:', 'jsr:', 'http:', 'https:'] as const
 const isNpmPackageMeta = z.object({
   'dist-tags': z.record(z.string(), z.string()),
   'versions': z.record(z.string(), z.object({})),
+  'time': z.record(z.string(), z.string()).optional(),
 })
 
 const isJsrPackageMeta = z.object({
   'latest': z.string().nullable(),
-  'versions': z.record(z.string(), z.object({ yanked: z.boolean().optional() })),
+  'versions': z.record(z.string(), z.object({ yanked: z.boolean().optional(), createdAt: z.string().optional() })),
 })
 
 const isGhPackageMeta = z.array(z.object({ name: z.string() }))
@@ -46,7 +47,11 @@ const excludes = (args.x ?? []) as string[]
 
 const importMapUrl = toFileUrl(resolve('deno.json'))
 let importMap = await Deno.readTextFile(importMapUrl)
-const denoJson = JSON.parse(importMap) as { imports: Record<string, string> | undefined }
+const denoJson = JSON.parse(importMap) as {
+  imports: Record<string, string> | undefined
+  minimumDependencyAge?: unknown
+}
+const maxPublishedAt = getMaxPublishedAt(denoJson.minimumDependencyAge)
 
 denoJson.imports = Object.fromEntries(
   await Promise.all(
@@ -67,14 +72,21 @@ await Promise.all(graph.modules.map((mod) => updateDepsInFile(mod.specifier, mod
 
 // regenerate lock file
 
+const lock = await Deno.readTextFile('deno.lock').catch(() => null)
+
 try {
   await Deno.remove('deno.lock')
 } catch (e) {
   if (!(e instanceof Deno.errors.NotFound)) console.error(e)
 }
 
-await $`deno install --lock=deno.lock -e ${files.map((name) => $.escapeArg(name)).join(' ')}`
-await $`deno install` // install deps in deno.json/package.json
+try {
+  await $`deno install --lock=deno.lock -e ${files.map((name) => $.escapeArg(name)).join(' ')}`
+  await $`deno install` // install deps in deno.json/package.json
+} catch (e) {
+  if (lock !== null) await Deno.writeTextFile('deno.lock', lock) // don't leave the project without a lock file
+  throw e
+}
 
 // #region Update logic
 
@@ -114,6 +126,42 @@ async function updateSpecifier(specifier: string) {
 
   resolved.version = `${rangeSpecifier || ''}${resolved.version}`
   return stringifyDependency(resolved)
+}
+
+/**
+ * Deno refuses to install the versions published within the minimum dependency age. (a day by default)
+ * https://docs.deno.com/go/minimum-dependency-age
+ */
+function getMaxPublishedAt(age: unknown): number {
+  if (typeof age === 'object' && age !== null) age = (age as { age?: unknown }).age
+  if (age == null) return Date.now() - 24 * 60 * 60 * 1000
+  if (/^\d+$/.test(`${age}`)) return Date.now() - Number(age) * 60 * 1000 // minutes
+  if (!/^P/i.test(`${age}`)) return Date.parse(`${age}`) // absolute cutoff date
+  const duration = Temporal.Duration.from(`${age}`)
+  return Date.now() - duration.total({ unit: 'milliseconds', relativeTo: Temporal.Now.plainDateTimeISO() })
+}
+
+/**
+ * Leaves out the versions that are too new to be installed.
+ * If that includes the latest one, the newest stable version left takes its place.
+ */
+function dropTooNew(
+  publishedAt: Record<string, string | undefined>,
+  versions: string[],
+  distTags: Record<string, string>,
+): [versions: string[], distTags: Record<string, string>] {
+  const isOldEnough = (version: string) => !(Date.parse(publishedAt[version] ?? '') > maxPublishedAt)
+  versions = versions.filter(isOldEnough)
+  if (!distTags.latest || isOldEnough(distTags.latest)) return [versions, distTags]
+
+  const latest = SemVer.parse(distTags.latest)
+  const newest = versions
+    .map((version) => SemVer.parse(version))
+    .filter((version) => !version.prerelease?.length && SemVer.compare(version, latest) < 0)
+    .sort(SemVer.compare)
+    .at(-1)
+
+  return newest ? [versions, { ...distTags, latest: SemVer.format(newest) }] : [[], distTags]
 }
 
 // #endregion
@@ -288,11 +336,8 @@ async function _resolveLatestVersion(dependency: Dependency): Promise<UpdatedDep
       const response = await fetch(`https://registry.npmjs.org/${dependency.name}`)
       if (!response.ok) break
       const pkg = isNpmPackageMeta.parse(await response.json())
-      const latestVersion = getLatestVersion(
-        Object.keys(pkg.versions),
-        dependency.version,
-        pkg['dist-tags'],
-      )
+      const [versions, distTags] = dropTooNew(pkg.time ?? {}, Object.keys(pkg.versions), pkg['dist-tags'])
+      const latestVersion = getLatestVersion(versions, dependency.version, distTags)
       if (!latestVersion) break
       return { ...dependency, version: latestVersion }
     }
@@ -301,11 +346,12 @@ async function _resolveLatestVersion(dependency: Dependency): Promise<UpdatedDep
       const response = await fetch(`https://jsr.io/${dependency.name}/meta.json`)
       if (!response.ok) break
       const meta = isJsrPackageMeta.parse(await response.json())
-      const latestVersion = getLatestVersion(
+      const [versions, distTags] = dropTooNew(
+        Object.fromEntries(Object.entries(meta.versions).map(([version, { createdAt }]) => [version, createdAt])),
         Object.entries(meta.versions).filter(([_, { yanked }]) => !yanked).map(([version]) => version),
-        dependency.version,
         meta.latest ? { latest: meta.latest } : {},
       )
+      const latestVersion = getLatestVersion(versions, dependency.version, distTags)
       if (!latestVersion) break
       return { ...dependency, version: latestVersion }
     }
