@@ -11,13 +11,13 @@
  *     Copyright (c) Matteo Collina and Undici contributors
  *     https://github.com/nodejs/undici/blob/main/LICENSE
  *     Relevant files:
- *       https://github.com/nodejs/undici/blob/5f11247b34510a3dc821da3c10d3cea0f39a7b13/lib/handler/retry-handler.js
+ *       https://github.com/nodejs/undici/blob/19901d8b73cb46a48e817dab4afce790f37fd2c1/lib/handler/retry-handler.js
  *
  * - deno_std - MIT License
- *     Copyright 2018-2025 the Deno authors.
+ *     Copyright 2018-2026 the Deno authors.
  *     https://github.com/denoland/std/blob/main/LICENSE
  *     Relevant files:
- *       https://github.com/denoland/std/blob/89d4ba448c68a20216b753d16d26e81e80a8dd6a/async/pool.ts
+ *       https://github.com/denoland/std/blob/e413b2b46fc3aad52bad774e958c8be83e8a2110/async/pool.ts
  *
  * - standard-schema - MIT License
  *     Copyright (c) 2024 Fabian Hiller

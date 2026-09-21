@@ -8,16 +8,16 @@
  * Credits:
  *
  * - next - MIT License
- *     Copyright (c) 2024 Vercel, Inc.
+ *     Copyright (c) 2025 Vercel, Inc.
  *     https://github.com/vercel/next.js/blob/main/license.md
  *     Relevant files:
- *       https://github.com/vercel/next.js/blob/f4c1a406e420e5ee5c01040e642a2e2fcc97f72f/packages/next/src/shared/lib/router/utils/sorted-routes.ts
+ *       https://github.com/vercel/next.js/blob/8141dcf12e61c02b298537ed79a6aebbe775f919/packages/next/src/shared/lib/router/utils/sorted-routes.ts
  *
  * - deno_std - MIT License
- *     Copyright 2018-2025 the Deno authors
+ *     Copyright 2018-2026 the Deno authors
  *     https://github.com/denoland/std/blob/main/LICENSE
  *     Relevant files:
- *       https://github.com/denoland/std/blob/49c117d2ef4626c4f3f061268f3adb0e4f083c5b/http/file_server.ts
+ *       https://github.com/denoland/std/blob/491f4c019d057c33301430545f673c6a837c1bc0/http/file_server.ts
  */
 
 import { debounce } from 'jsr:@std/async@^1.5.0/debounce'
