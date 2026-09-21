@@ -77,7 +77,7 @@ export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined
    */
   schema?: Schema
   /**
-   * The maximum number of requests to make concurrently.\
+   * The maximum number of requests to make concurrently. Must be a positive number.\
    * Default: 64 requests per pool.
    */
   concurrency?: number
@@ -295,7 +295,7 @@ export function concurrentArrayFetcher<T, Schema extends StandardSchemaV1 | unde
   toRequest: (item: T) => Request,
   { key, maxAttempts = 5, timeout = 10_000, deadline = 300_000, schema, concurrency = 64 }: FetchOptions<Schema>,
 ): AsyncIterableIterator<ResponseOrError<T, Schema>> {
-  //
+  if (!(concurrency >= 1)) throw new RangeError("'concurrency' must be a positive number")
 
   let pool = pools.get(key)
   if (!pool) pools.set(key, pool = new Semaphore(concurrency))
