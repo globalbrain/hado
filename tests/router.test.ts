@@ -2,10 +2,10 @@
  * Credits:
  *
  * - next - MIT License
- *     Copyright (c) 2024 Vercel, Inc.
+ *     Copyright (c) 2025 Vercel, Inc.
  *     https://github.com/vercel/next.js/blob/canary/license.md
  *     Relevant files:
- *       https://github.com/vercel/next.js/blob/d43a387d271263f2c1c4da6b9db826e382fc489c/test/unit/page-route-sorter.test.ts
+ *       https://github.com/vercel/next.js/blob/f702a14acf4e9d815830aedd67d2f1d0e1e78a7b/test/unit/page-route-sorter.test.ts
  *
  * - fs-fixture - MIT License
  *     Copyright (c) Hiroki Osame <hiroki.osame@gmail.com>
