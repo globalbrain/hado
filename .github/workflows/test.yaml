@@ -16,4 +16,4 @@ jobs:
   test:
     uses: brc-dd/cross-bdd/.github/workflows/test.reusable.yaml@main
     with:
-      deno_versions: stable
+      deno_versions: latest
