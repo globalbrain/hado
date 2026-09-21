@@ -12,7 +12,7 @@
  *     https://github.com/privatenumber/fs-fixture/blob/master/LICENSE
  */
 
-import { assertEquals, dirname, getAvailablePort } from '../dev_deps.ts'
+import { assertEquals, assertRejects, dirname, getAvailablePort } from '../dev_deps.ts'
 import { createRouter } from '../src/router.ts'
 
 class TempDir {
@@ -161,6 +161,13 @@ Deno.test('router', async (t) => {
     assertEquals(res.headers.get('content-type'), 'text/plain;charset=UTF-8')
     assertEquals(res.headers.get('content-length'), String('GET /index.ts = {}'.length)) // same as GET
     assertEquals(res.headers.get('content-encoding'), null)
+  })
+
+  await t.step('catches param names starting with the ellipsis character instead of three dots', async () => {
+    using temp = new TempDir()
+    await Deno.writeTextFile(temp.path + '/[…three-dots].ts', 'export const GET = () => new Response()')
+
+    await assertRejects(() => createRouter({ fsRoot: temp.path }), Error, "Detected ellipsis ('…')")
   })
 
   await t.step('static fallback rejects percent-encoded backslashes', async () => {
