@@ -52,6 +52,7 @@ const denoJson = JSON.parse(importMap) as {
   minimumDependencyAge?: unknown
 }
 const maxPublishedAt = getMaxPublishedAt(denoJson.minimumDependencyAge)
+const ageExempt = (denoJson.minimumDependencyAge as { exclude?: string[] } | null)?.exclude ?? []
 
 denoJson.imports = Object.fromEntries(
   await Promise.all(
@@ -146,10 +147,17 @@ function getMaxPublishedAt(age: unknown): number {
  * If that includes the latest one, the newest stable version left takes its place.
  */
 function dropTooNew(
+  { protocol, name }: Dependency,
   publishedAt: Record<string, string | undefined>,
   versions: string[],
   distTags: Record<string, string>,
 ): [versions: string[], distTags: Record<string, string>] {
+  // packages can be exempted from the minimum dependency age, like `npm:chalk` or `npm:@scope/*`
+  const id = protocol + name
+  if (ageExempt.some((entry) => entry.endsWith('*') ? id.startsWith(entry.slice(0, -1)) : id === entry)) {
+    return [versions, distTags]
+  }
+
   const isOldEnough = (version: string) => !(Date.parse(publishedAt[version] ?? '') > maxPublishedAt)
   versions = versions.filter(isOldEnough)
   if (!distTags.latest || isOldEnough(distTags.latest)) return [versions, distTags]
@@ -336,7 +344,7 @@ async function _resolveLatestVersion(dependency: Dependency): Promise<UpdatedDep
       const response = await fetch(`https://registry.npmjs.org/${dependency.name}`)
       if (!response.ok) break
       const pkg = isNpmPackageMeta.parse(await response.json())
-      const [versions, distTags] = dropTooNew(pkg.time ?? {}, Object.keys(pkg.versions), pkg['dist-tags'])
+      const [versions, distTags] = dropTooNew(dependency, pkg.time ?? {}, Object.keys(pkg.versions), pkg['dist-tags'])
       const latestVersion = getLatestVersion(versions, dependency.version, distTags)
       if (!latestVersion) break
       return { ...dependency, version: latestVersion }
@@ -347,6 +355,7 @@ async function _resolveLatestVersion(dependency: Dependency): Promise<UpdatedDep
       if (!response.ok) break
       const meta = isJsrPackageMeta.parse(await response.json())
       const [versions, distTags] = dropTooNew(
+        dependency,
         Object.fromEntries(Object.entries(meta.versions).map(([version, { createdAt }]) => [version, createdAt])),
         Object.entries(meta.versions).filter(([_, { yanked }]) => !yanked).map(([version]) => version),
         meta.latest ? { latest: meta.latest } : {},
