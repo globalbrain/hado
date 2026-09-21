@@ -105,6 +105,62 @@ Deno.test('utils', async (t) => {
     )
 
     await t.step(
+      'replays the request body when retrying',
+      server.boundary(async () => {
+        const bodies: string[] = []
+
+        server.use(
+          http.put(
+            'https://example.com/todos/1',
+            async ({ request }) => {
+              bodies.push(await request.text())
+              return Response.text('Service Unavailable', { status: 503 })
+            },
+            { once: true },
+          ),
+          http.put(
+            'https://example.com/todos/1',
+            async ({ request }) => {
+              bodies.push(await request.text())
+              return Response.json({ id: 1, todo: 'Todo 1' })
+            },
+          ),
+        )
+
+        const request = new Request('https://example.com/todos/1', { method: 'PUT', body: 'Todo 1' })
+        const result = await fx(request, baseOptions)
+
+        assert(result.success)
+        assertEquals(bodies, ['Todo 1', 'Todo 1'])
+      }),
+    )
+
+    await t.step(
+      'reports the failed response when retries of a request with a body are exhausted',
+      server.boundary(async () => {
+        let attempts = 0
+
+        server.use(
+          http.put(
+            'https://example.com/todos/1',
+            () => {
+              attempts++
+              return Response.text('Service Unavailable', { status: 503 })
+            },
+          ),
+        )
+
+        const request = new Request('https://example.com/todos/1', { method: 'PUT', body: 'Todo 1' })
+        const result = await fx(request, { ...baseOptions, maxAttempts: 3 })
+
+        assert(!result.success)
+        assertInstanceOf(result.error, FetchError) // and not a TypeError about the body being unusable
+        assertEquals(result.error.response.status, 503)
+        assertEquals(attempts, 3)
+      }),
+    )
+
+    await t.step(
       'handles schema validation error',
       server.boundary(async () => {
         server.use(
