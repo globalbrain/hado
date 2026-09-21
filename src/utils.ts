@@ -57,7 +57,8 @@ export type FetchOptions<Schema extends StandardSchemaV1 | undefined = undefined
    */
   key: string
   /**
-   * The maximum number of attempts to make.\
+   * The maximum number of attempts to make. Only idempotent requests are retried.\
+   * Request bodies are kept in memory to be replayed on retries, set this to 1 when streaming large bodies.\
    * Default: 5 attempts per request. (4 retries)
    */
   maxAttempts?: number
@@ -364,7 +365,8 @@ async function _fetch(
 
   while (maxAttempts-- > 0) {
     try {
-      const res = await fetch(req, {
+      // a body can only be read once, so a copy is sent while there are attempts left to keep the original replayable
+      const res = await fetch(maxAttempts > 0 && req.body ? req.clone() : req, {
         signal: AbortSignal.any([...signals, timeoutSignal(timeout, `Request timed out after ${timeout}ms`)]),
       })
 
