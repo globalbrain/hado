@@ -402,9 +402,7 @@ export function getLatestVersion(
 
   const range = SemVer.parseRange('^' + currentVersion)
   for (const version of versions) {
-    if (SemVer.satisfies(version, range) && SemVer.compare(version, current) >= 0) {
-      return SemVer.format(version)
-    }
+    if (SemVer.satisfies(version, range) && SemVer.compare(version, current) >= 0) return SemVer.format(version)
   }
 
   return
@@ -418,6 +416,8 @@ function isGithub(dependency: Dependency): boolean {
 
 /**
  * TODO:
- * - remove vendored code when https://github.com/hasundue/molt/issues/194 and https://github.com/hasundue/molt/issues/195 are resolved
- * - use dep.code.span / dep.type.span to update lines instead of replaceAll when https://github.com/denoland/deno_graph/issues/80 is fixed
+ * - remove vendored code when https://github.com/hasundue/molt/issues/194 and
+ *   https://github.com/hasundue/molt/issues/195 are resolved
+ * - use dep.code.span / dep.type.span to update lines instead of replaceAll when
+ *   https://github.com/denoland/deno_graph/issues/80 is fixed
  */

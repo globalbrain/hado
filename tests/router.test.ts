@@ -108,7 +108,8 @@ Deno.test('router', async (t) => {
     await Deno.mkdir(dirname(path), { recursive: true })
     await Deno.writeTextFile(
       path,
-      `export function GET(_req: Request, params: Record<string, string | string[]>) { return new Response('GET ${file} = ' + JSON.stringify(params)) }`,
+      `export function GET(_req: Request, params: Record<string, string | string[]>) { ` +
+        `return new Response('GET ${file} = ' + JSON.stringify(params)) }`,
     )
   }
 
