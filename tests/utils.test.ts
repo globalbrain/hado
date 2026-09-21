@@ -146,6 +146,58 @@ Deno.test('utils', async (t) => {
       }),
     )
 
+    await t.step(
+      'waits for retry-after before retrying',
+      server.boundary(async () => {
+        server.use(
+          http.get(
+            'https://example.com/todos/1',
+            () => Response.text('Service Unavailable', { status: 503, headers: { 'Retry-After': '1' } }),
+            { once: true },
+          ),
+          http.get(
+            'https://example.com/todos/1',
+            () => Response.json({ id: 1, todo: 'Todo 1' }),
+          ),
+        )
+
+        const request = new Request('https://example.com/todos/1')
+
+        const startTime = Date.now()
+        const result = await fx(request, baseOptions)
+        const elapsedTime = Date.now() - startTime
+
+        assert(result.success)
+        // Retry-After is 1s, so the second attempt should only start after that. We give it a generous buffer.
+        assert(elapsedTime > 900 && elapsedTime < 2000)
+      }),
+    )
+
+    await t.step(
+      'stops waiting for retry-after when the request is aborted',
+      server.boundary(async () => {
+        server.use(
+          http.get(
+            'https://example.com/todos/1',
+            () => Response.text('Service Unavailable', { status: 503, headers: { 'Retry-After': '5' } }),
+          ),
+        )
+
+        const controller = new AbortController()
+        const request = new Request('https://example.com/todos/1', { signal: controller.signal })
+        setTimeout(() => controller.abort(), 50)
+
+        const startTime = Date.now()
+        const result = await fx(request, baseOptions)
+        const elapsedTime = Date.now() - startTime
+
+        assert(!result.success)
+        assertInstanceOf(result.error, Error)
+        assertEquals(result.error.name, 'AbortError')
+        assert(elapsedTime < 1000)
+      }),
+    )
+
     await t.step('rejects a non-positive concurrency', async () => {
       const request = new Request('https://example.com/todos/1')
 
