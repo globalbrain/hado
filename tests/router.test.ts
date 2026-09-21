@@ -154,10 +154,12 @@ Deno.test('router', async (t) => {
 
   await t.step('HEAD is implicitly handled', async () => {
     const res = await fetch(`${base}/`, { method: 'HEAD' })
+    const text = await res.text()
 
     assertEquals(res.status, 200)
+    assertEquals(text, '')
     assertEquals(res.headers.get('content-type'), 'text/plain;charset=UTF-8')
-    assertEquals(res.headers.get('content-length'), null)
+    assertEquals(res.headers.get('content-length'), String('GET /index.ts = {}'.length)) // same as GET
     assertEquals(res.headers.get('content-encoding'), null)
   })
 })
