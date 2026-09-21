@@ -57,7 +57,7 @@
  *     https://github.com/getsentry/sentry-javascript/blob/develop/LICENSE
  */
 
-import type { Client, Integration, Options } from 'npm:@sentry/core@^10.40.0'
+import type { Client, Integration, Options } from 'npm:@sentry/core@^10.75.0'
 import {
   captureConsoleIntegration,
   type DenoOptions,
@@ -65,9 +65,9 @@ import {
   getDefaultIntegrations as sentryGetDefaultIntegrations,
   init as sentryInit,
   zodErrorsIntegration,
-} from 'npm:@sentry/deno@^10.40.0'
+} from 'npm:@sentry/deno@^10.75.0'
 
-export * from 'npm:@sentry/deno@^10.40.0'
+export * from 'npm:@sentry/deno@^10.75.0'
 
 /**
  * Returns the default integrations for the Deno SDK.

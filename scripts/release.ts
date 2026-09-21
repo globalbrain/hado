@@ -76,10 +76,8 @@ class Select extends _Select<string> {
     return { ...super.getDefaultSettings(options), ...defaultTheme }
   }
 
-  protected override highlight(name: string | number): string {
-    const isCurrent = name === this.options[this.listIndex]?.name
-
-    name = name + ''
+  protected override getListItemLabel(option: { name: string }, isSelected?: boolean): string {
+    let name = option.name
 
     if (isReleaseType(name)) {
       const newVersion = SemVer.increment(oldVersion, name)
@@ -106,7 +104,7 @@ class Select extends _Select<string> {
       name = `${name} \t${dim(release)}`
     }
 
-    if (isCurrent) return cyan(name)
+    if (isSelected) return cyan(name)
     if (/^-+$/.test(name)) return dim(name)
 
     return name
