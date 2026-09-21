@@ -342,10 +342,7 @@ export async function createRouter(
       `${file}:${method}`,
       async () => {
         try {
-          const handler: Handler | undefined = (await import(file))?.[method === 'HEAD' ? 'GET' : method]
-          if (typeof handler !== 'function') return null
-          if (method === 'HEAD') return async (...args) => new Response(null, await handler(...args))
-          return handler
+          return (await import(file))?.[method === 'HEAD' ? 'GET' : method] ?? null
         } catch {
           return null
         }
