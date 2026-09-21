@@ -6,6 +6,7 @@ import {
   esbuild,
   esbuildDenoPlugin,
   esbuildDts,
+  type EsbuildPlugin,
   expandGlob,
   parseArgs,
   relative,
@@ -137,7 +138,8 @@ async function useRolldown(): Promise<Record<string, string>> {
 
 async function useEsbuild(): Promise<Record<string, string>> {
   const res = await esbuild({
-    plugins: [esbuildDts({ include: entryPoints }), ...esbuildDenoPlugin()],
+    // esbuild-deno-loader vendors the types of esbuild <0.25.6, which are not assignable to the newer ones
+    plugins: [esbuildDts({ include: entryPoints }), ...esbuildDenoPlugin() as EsbuildPlugin[]],
     entryPoints,
     outdir: 'dist',
     bundle: true,
