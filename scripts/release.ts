@@ -371,7 +371,7 @@ async function report(label: string, { url, created }: { url: string; created: b
 // #region Manifest
 
 let manifestFile = 'deno.json'
-let manifest: { name: string; version: string }
+let manifest: { name: string; version: string; tasks?: Record<string, unknown>; scripts?: Record<string, unknown> }
 try {
   manifest = JSON.parse(await Deno.readTextFile(manifestFile))
 } catch {
@@ -446,7 +446,7 @@ async function bump(newVersion: string): Promise<void> {
     await $`deno run -A --no-lock \
       --preload='data:application/javascript,import "npm:conventional-changelog-conventionalcommits"' \
       npm:conventional-changelog -i CHANGELOG.md -s -p conventionalcommits -k ${manifestFile}`
-    await $`deno task format`
+    if (manifest.tasks?.format ?? manifest.scripts?.format) await $`deno task format`
   })
 
   if (!(await confirm('Changelog generated. Does it look good?'))) Deno.exit()

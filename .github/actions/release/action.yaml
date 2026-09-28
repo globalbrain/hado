@@ -1,0 +1,28 @@
+name: Release
+description: Runs the release script of this repository
+
+inputs:
+  command:
+    description: prepare or finalize
+    required: true
+  version:
+    description: Version increment or explicit version, for prepare
+    default: ''
+  token:
+    description: Token for the pull request or the release
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: denoland/setup-deno@v2
+    - run: |
+        root=$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)
+        args=("$COMMAND")
+        if [[ -n "$VERSION" ]]; then args+=("$VERSION"); fi
+        deno run -A --no-config --lock "$root/deno.lock" --frozen "$root/scripts/release.ts" "${args[@]}"
+      shell: bash
+      env:
+        COMMAND: ${{ inputs.command }}
+        VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ inputs.token }}

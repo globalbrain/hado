@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version increment or explicit version, used on workflow_dispatch
+        type: string
+    secrets:
+      token:
+        description: PAT to use instead of the default token
+        required: false
+    outputs:
+      released:
+        description: Whether this run created a release
+        value: ${{ jobs.finalize.outputs.released }}
+      version:
+        description: The released version
+        value: ${{ jobs.finalize.outputs.version }}
+      tag:
+        description: The released tag
+        value: ${{ jobs.finalize.outputs.tag }}
+
+jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.token || github.token }}
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+      - uses: $/.github/actions/release
+        with:
+          command: prepare
+          version: ${{ inputs.version }}
+          token: ${{ secrets.token || github.token }}
+
+  finalize:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      released: ${{ steps.check.outputs.released }}
+      version: ${{ steps.check.outputs.version }}
+      tag: ${{ steps.check.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.token || github.token }}
+      - id: check
+        run: |
+          if [[ -f deno.json ]]; then manifest=deno.json; else manifest=package.json; fi
+          version=$(jq -r .version "$manifest")
+          tagged=$(git ls-remote --tags origin "refs/tags/v$version" "refs/tags/v$version^{}" | tail -n 1 | cut -f 1)
+          if [[ -n "$tagged" && "$tagged" != "$GITHUB_SHA" ]]; then
+            echo "v$version is already tagged at ${tagged:0:7}, nothing to release"
+            released=false
+          else
+            released=true
+          fi
+          printf 'version=%s\ntag=v%s\nreleased=%s\n' "$version" "$version" "$released" >> "$GITHUB_OUTPUT"
+      - if: steps.check.outputs.released == 'true'
+        uses: $/.github/actions/release
+        with:
+          command: finalize
+          token: ${{ secrets.token || github.token }}

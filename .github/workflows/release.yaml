@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths: [deno.json, package.json]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: patch, minor, major, prepatch, preminor, premajor, prerelease, or an explicit version
+        required: true
+        type: string
+
+concurrency: release
+
+jobs:
+  release:
+    if: github.repository == 'globalbrain/hado'
+    uses: $/.github/workflows/release.reusable.yaml
+    with:
+      version: ${{ inputs.version }}
+    permissions:
+      contents: write
+      pull-requests: write
+
+  publish:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: deno
+      url: https://jsr.io/@globalbrain/hado@${{ needs.release.outputs.version }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: lewagon/wait-on-check-action@v1.9.1
+        with:
+          ref: ${{ github.sha }}
+          check-regexp: 'test / .*'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v7
+      - uses: denoland/setup-deno@v2
+      - run: deno publish
