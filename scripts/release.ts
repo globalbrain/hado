@@ -296,13 +296,17 @@ await step('Creating a new release', async () => {
   const repoUrl = 'https://' + rawRepoUrl
     .replace(/^.*(?:\:\/\/|@)/, '').replace(/(?:\.git|#).*$/, '').replace(/:\/?/, '/')
 
+  const escapedVersion = RegExp.escape(newVersion)
+  const heading = `^## (?:\\[${escapedVersion}\\]\\((.*?)\\)|${escapedVersion})(?: .*)?$`
+
   const changelog = await Deno.readTextFile('CHANGELOG.md')
-  const match = changelog.match(
-    new RegExp(`## \\[${RegExp.escape(newVersion)}\\]\\((.*?)\\).*?\n([\\s\\S]*?)(?=\n## |$)`),
-  )
+  const match = changelog.match(new RegExp(`${heading}\\n?([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm'))
+
+  const notes = match?.[2]?.trim() ?? ''
+  const compareUrl = match?.[1] ?? `${repoUrl}/commits/v${newVersion}`
 
   const url = newGithubReleaseUrl({
-    body: `${match?.[2]?.trim() ?? ''}\n\n**Full Changelog**: ${match?.[1]?.trim() ?? ''}`,
+    body: [notes, `**Full Changelog**: ${compareUrl}`].filter(Boolean).join('\n\n'),
     isPrerelease: (SemVer.parse(newVersion).prerelease?.length ?? 0) > 0,
     tag: `v${newVersion}`,
     repoUrl,
