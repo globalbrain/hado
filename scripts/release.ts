@@ -208,6 +208,23 @@ function newGithubReleaseUrl(options: NewGithubReleaseUrlOptions): string {
   return url.href
 }
 
+/**
+ * Convert the URL of a git remote to the HTTPS URL of the repo on its host.
+ *
+ * @example
+ * ```ts
+ * toRepoUrl('git@github.com:owner/repo.git') // 'https://github.com/owner/repo'
+ * toRepoUrl('https://github.com/owner/owner.github.io.git') // 'https://github.com/owner/owner.github.io'
+ * ```
+ */
+function toRepoUrl(remote: string): string {
+  // scp-like syntax (`[user@]host:path`) isn't a valid URL, so it's normalized to `ssh://` first
+  const url = new URL(remote.trim().replace(/^([^@/]+@)?([^:/]+):(?!\/\/)\/?/, 'ssh://$1$2/'))
+  const path = url.pathname.replace(/^\/+|\/+$/g, '').replace(/\.git$/i, '')
+
+  return `https://${url.hostname}/${path}`
+}
+
 // #endregion
 
 // #region Opener
@@ -292,9 +309,7 @@ await step('Pushing to GitHub', async () => {
 })
 
 await step('Creating a new release', async () => {
-  const rawRepoUrl = await $`git remote get-url origin`.text()
-  const repoUrl = 'https://' + rawRepoUrl
-    .replace(/^.*(?:\:\/\/|@)/, '').replace(/(?:\.git|#).*$/, '').replace(/:\/?/, '/')
+  const repoUrl = toRepoUrl(await $`git remote get-url origin`.text())
 
   const escapedVersion = RegExp.escape(newVersion)
   const heading = `^## (?:\\[${escapedVersion}\\]\\((.*?)\\)|${escapedVersion})(?: .*)?$`
