@@ -20,6 +20,7 @@ runs:
         root=$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)
         args=("$COMMAND")
         if [[ -n "$VERSION" ]]; then args+=("$VERSION"); fi
+        deno install
         deno run -A --no-config --lock "$root/deno.lock" --frozen "$root/scripts/release.ts" "${args[@]}"
       shell: bash
       env:
