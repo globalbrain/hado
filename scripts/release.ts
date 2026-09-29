@@ -447,6 +447,7 @@ async function bump(newVersion: string): Promise<void> {
       --preload='data:application/javascript,import "npm:conventional-changelog-conventionalcommits"' \
       npm:conventional-changelog -i CHANGELOG.md -s -p conventionalcommits -k ${manifestFile}`
     if (manifest.tasks?.format ?? manifest.scripts?.format) await $`deno task format`
+    if (manifest.tasks?.lint ?? manifest.scripts?.lint) await $`deno task lint`
   })
 
   if (!(await confirm('Changelog generated. Does it look good?'))) Deno.exit()
