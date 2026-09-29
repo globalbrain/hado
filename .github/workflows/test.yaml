@@ -15,6 +15,6 @@ concurrency:
 
 jobs:
   test:
-    uses: brc-dd/cross-bdd/.github/workflows/test.reusable.yaml@main
+    uses: brc-dd/cross-bdd/.github/workflows/test.reusable.yaml@5dd8e4745588535a78eee0c3768fffe6cfd58d44 # main
     with:
       deno_versions: latest
