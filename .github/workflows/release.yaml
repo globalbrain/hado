@@ -19,23 +19,10 @@ jobs:
     uses: $/.github/workflows/release.reusable.yaml
     with:
       version: ${{ inputs.version }}
-    permissions:
-      contents: write
-      pull-requests: write
-
-  publish:
-    needs: release
-    if: needs.release.outputs.released == 'true'
-    runs-on: ubuntu-latest
-    environment:
-      name: jsr
-      url: https://jsr.io/@globalbrain/hado@${{ needs.release.outputs.version }}
+      environment: jsr
+      environment_url: https://jsr.io/@globalbrain/hado@{0}
     permissions:
       actions: read
-      contents: read
+      contents: write
       id-token: write
-    steps:
-      - uses: $/.github/actions/wait
-      - uses: actions/checkout@v7
-      - uses: denoland/setup-deno@v2
-      - run: deno publish
+      pull-requests: write

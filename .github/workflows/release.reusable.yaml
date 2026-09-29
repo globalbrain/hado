@@ -10,6 +10,20 @@ on:
         description: Commands to run before preparing the release, like installing the dependencies or building
         type: string
         default: deno install
+      publish:
+        description: Commands to run after the release is created, like publishing the package
+        type: string
+        default: deno publish
+      environment:
+        description: Environment of the job that creates the release and publishes
+        type: string
+      environment_url:
+        description: URL of the deployment to the environment, {0} is replaced with the version
+        type: string
+      workflows:
+        description: Workflow files whose runs have to succeed before the release, the ones that don't exist are skipped
+        type: string
+        default: test.yaml test.yml ci.yaml ci.yml
     secrets:
       token:
         description: PAT to use instead of the default token
@@ -17,13 +31,13 @@ on:
     outputs:
       released:
         description: Whether this run created a release
-        value: ${{ jobs.finalize.outputs.released }}
+        value: ${{ jobs.check.outputs.released }}
       version:
         description: The released version
-        value: ${{ jobs.finalize.outputs.version }}
+        value: ${{ jobs.check.outputs.version }}
       tag:
         description: The released tag
-        value: ${{ jobs.finalize.outputs.tag }}
+        value: ${{ jobs.check.outputs.tag }}
 
 jobs:
   prepare:
@@ -47,19 +61,18 @@ jobs:
           setup: ${{ inputs.setup }}
           token: ${{ secrets.token || github.token }}
 
-  finalize:
+  check:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      actions: read
+      contents: read
     outputs:
       released: ${{ steps.check.outputs.released }}
       version: ${{ steps.check.outputs.version }}
       tag: ${{ steps.check.outputs.tag }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.token || github.token }}
       - id: check
         run: |
           if [[ -f deno.json ]]; then manifest=deno.json; else manifest=package.json; fi
@@ -73,7 +86,27 @@ jobs:
           fi
           printf 'version=%s\ntag=v%s\nreleased=%s\n' "$version" "$version" "$released" >> "$GITHUB_OUTPUT"
       - if: steps.check.outputs.released == 'true'
-        uses: $/.github/actions/release
+        uses: $/.github/actions/wait
+        with:
+          workflows: ${{ inputs.workflows }}
+
+  release:
+    needs: check
+    if: needs.check.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ format(inputs.environment_url, needs.check.outputs.version) }}
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.token || github.token }}
+      - uses: $/.github/actions/release
         with:
           command: finalize
           token: ${{ secrets.token || github.token }}
+      - if: inputs.publish != ''
+        run: ${{ inputs.publish }}
