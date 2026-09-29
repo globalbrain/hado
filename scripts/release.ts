@@ -370,14 +370,20 @@ async function report(label: string, { url, created }: { url: string; created: b
 
 // #region Manifest
 
-let manifestFile = 'deno.json'
-let manifest: { name: string; version: string; tasks?: Record<string, unknown>; scripts?: Record<string, unknown> }
-try {
-  manifest = JSON.parse(await Deno.readTextFile(manifestFile))
-} catch {
-  manifestFile = 'package.json'
-  manifest = JSON.parse(await Deno.readTextFile(manifestFile))
+type Manifest = { name: string; version: string; tasks?: Record<string, unknown>; scripts?: Record<string, unknown> }
+
+async function readManifest(file: string): Promise<Manifest | undefined> {
+  return await Deno.readTextFile(file).then(JSON.parse).catch(() => undefined)
 }
+
+const denoJson = await readManifest('deno.json')
+const packageJson = await readManifest('package.json')
+
+const found = denoJson ?? packageJson
+if (!found) throw new Error('deno.json or package.json is required')
+
+const manifest: Manifest = found
+const manifestFile = denoJson ? 'deno.json' : 'package.json'
 const oldVersion = SemVer.parse(manifest.version)
 
 // #endregion
@@ -432,6 +438,15 @@ async function resolveVersion(input?: string): Promise<string> {
 }
 
 /**
+ * Run a task if the project defines it, with pnpm for the scripts of package.json as deno can't run the shell shims
+ * that pnpm puts in node_modules/.bin.
+ */
+async function runTask(name: string): Promise<void> {
+  if (packageJson?.scripts?.[name]) await $`pnpm run ${name}`
+  else if (denoJson?.tasks?.[name]) await $`deno task ${name}`
+}
+
+/**
  * Update the manifest and the changelog to the new version, confirming both in interactive sessions.
  */
 async function bump(newVersion: string): Promise<void> {
@@ -446,8 +461,8 @@ async function bump(newVersion: string): Promise<void> {
     await $`deno run -A --no-lock \
       --preload='data:application/javascript,import "npm:conventional-changelog-conventionalcommits"' \
       npm:conventional-changelog -i CHANGELOG.md -s -p conventionalcommits -k ${manifestFile}`
-    if (manifest.tasks?.format ?? manifest.scripts?.format) await $`deno task format`
-    if (manifest.tasks?.lint ?? manifest.scripts?.lint) await $`deno task lint`
+    await runTask('format')
+    await runTask('lint')
   })
 
   if (!(await confirm('Changelog generated. Does it look good?'))) Deno.exit()
