@@ -28,7 +28,7 @@ jobs:
     if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
     environment:
-      name: deno
+      name: jsr
       url: https://jsr.io/@globalbrain/hado@${{ needs.release.outputs.version }}
     permissions:
       contents: read
