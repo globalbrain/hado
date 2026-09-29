@@ -1,19 +1,15 @@
-import {
-  copy,
-  dirname,
-  emptyDir,
-  ensureDir,
-  esbuild,
-  esbuildDenoPlugin,
-  esbuildDts,
-  type EsbuildPlugin,
-  expandGlob,
-  parseArgs,
-  relative,
-  rolldown,
-  rolldownDenoPlugin,
-  rolldownDts,
-} from '../dev_deps.ts'
+import 'npm:typescript@^6.0.3'
+
+import { default as rolldownDenoPlugin } from 'jsr:@deno/rolldown-plugin@^0.0.10'
+import { denoPlugins as esbuildDenoPlugin } from 'jsr:@luca/esbuild-deno-loader@^0.11.1'
+import { parseArgs } from 'jsr:@std/cli@^1.0.32'
+import { copy, emptyDir, ensureDir, expandGlob } from 'jsr:@std/fs@^1.0.24'
+import { dirname, relative } from 'jsr:@std/path@^1.1.6'
+import type { Plugin as EsbuildPlugin } from 'npm:esbuild@0.28.2'
+import { build as esbuild } from 'npm:esbuild@0.28.2'
+import { dts as rolldownDts } from 'npm:rolldown-plugin-dts@^0.28.6'
+import { build as rolldown } from 'npm:rolldown@^1.2.11'
+import { default as esbuildDts } from 'npm:unplugin-isolated-decl@^0.17.0/esbuild'
 
 const pick = [
   'name',

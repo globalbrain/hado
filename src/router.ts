@@ -20,10 +20,10 @@
  *       https://github.com/denoland/std/blob/491f4c019d057c33301430545f673c6a837c1bc0/http/file_server.ts
  */
 
-import { debounce } from 'jsr:@std/async@^1.5.0/debounce'
+import { debounce } from 'jsr:@std/async@^1.5.1/debounce'
 import { walk } from 'jsr:@std/fs@^1.0.24/walk'
-import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.1.3/file-server'
-import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.1.3/status'
+import { serveDir, type ServeDirOptions } from 'jsr:@std/http@^1.1.4/file-server'
+import { STATUS_CODE, STATUS_TEXT, type StatusCode } from 'jsr:@std/http@^1.1.4/status'
 import { normalize as posixNormalize } from 'jsr:@std/path@^1.1.6/posix/normalize'
 import { toFileUrl } from 'jsr:@std/path@^1.1.6/to-file-url'
 

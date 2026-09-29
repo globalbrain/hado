@@ -6,20 +6,16 @@
  *     https://github.com/hasundue/molt/blob/main/LICENSE
  */
 
-import {
-  $,
-  assertExists,
-  createCache,
-  createGraph,
-  type DependencyJson,
-  fromFileUrl,
-  parseArgs,
-  parseFromJson,
-  resolve,
-  SemVer,
-  toFileUrl,
-  z,
-} from '../dev_deps.ts'
+import { parseFromJson } from 'jsr:@brc-dd/import-map@^0.25.0'
+import { createCache } from 'jsr:@deno/cache-dir@^0.27.0'
+import { createGraph } from 'jsr:@deno/graph@^0.111.0'
+import type { DependencyJson } from 'jsr:@deno/graph@^0.111.0/types'
+import { assertExists } from 'jsr:@std/assert@^1.0.19'
+import { parseArgs } from 'jsr:@std/cli@^1.0.32'
+import { fromFileUrl, resolve, toFileUrl } from 'jsr:@std/path@^1.1.6'
+import * as SemVer from 'jsr:@std/semver@^1.0.8'
+import { z } from 'npm:zod@4.6.5'
+import { $ } from './_dax.ts'
 
 // #region Vendored constants
 

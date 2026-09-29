@@ -12,7 +12,9 @@
  *     https://github.com/privatenumber/fs-fixture/blob/master/LICENSE
  */
 
-import { assertEquals, assertRejects, dirname, getAvailablePort } from '../dev_deps.ts'
+import { assertEquals, assertRejects } from 'jsr:@std/assert@^1.0.19'
+import { getAvailablePort } from 'jsr:@std/net@^1.0.7'
+import { dirname } from 'jsr:@std/path@^1.1.6'
 import { createRouter } from '../src/router.ts'
 
 class TempDir {

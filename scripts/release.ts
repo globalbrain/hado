@@ -18,22 +18,12 @@
 
 // #region Imports
 
-import {
-  $,
-  bold,
-  Confirm as _Confirm,
-  type ConfirmOptions,
-  cyan,
-  dim,
-  green,
-  Input as _Input,
-  type InputOptions,
-  magenta,
-  Select as _Select,
-  type SelectOptions,
-  SemVer,
-  Spinner,
-} from '../dev_deps.ts'
+import type { ConfirmOptions, InputOptions, SelectOptions } from 'jsr:@cliffy/prompt@^1.3.1'
+import { Confirm as _Confirm, Input as _Input, Select as _Select } from 'jsr:@cliffy/prompt@^1.3.1'
+import { Spinner } from 'jsr:@std/cli@^1.0.32/unstable-spinner'
+import { bold, cyan, dim, green, magenta } from 'jsr:@std/fmt@^1.0.10/colors'
+import * as SemVer from 'jsr:@std/semver@^1.0.8'
+import { $ } from './_dax.ts'
 
 const SEMVER_INCREMENTS: SemVer.ReleaseType[] = [
   'patch',
