@@ -11,16 +11,21 @@ inputs:
   token:
     description: Token for the pull request or the release
     required: true
+  setup:
+    description: Commands to run before the release script, like installing the dependencies or building
+    default: ''
 
 runs:
   using: composite
   steps:
     - uses: denoland/setup-deno@v2
+    - if: inputs.setup != ''
+      run: ${{ inputs.setup }}
+      shell: bash
     - run: |
         root=$(cd "$GITHUB_ACTION_PATH/../../.." && pwd)
         args=("$COMMAND")
         if [[ -n "$VERSION" ]]; then args+=("$VERSION"); fi
-        deno install
         deno run -A --no-config --lock "$root/deno.lock" --frozen "$root/scripts/release.ts" "${args[@]}"
       shell: bash
       env:

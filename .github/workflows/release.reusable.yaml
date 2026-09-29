@@ -6,6 +6,10 @@ on:
       version:
         description: Version increment or explicit version, used on workflow_dispatch
         type: string
+      setup:
+        description: Commands to run before preparing the release, like installing the dependencies or building
+        type: string
+        default: deno install
     secrets:
       token:
         description: PAT to use instead of the default token
@@ -40,6 +44,7 @@ jobs:
         with:
           command: prepare
           version: ${{ inputs.version }}
+          setup: ${{ inputs.setup }}
           token: ${{ secrets.token || github.token }}
 
   finalize:
