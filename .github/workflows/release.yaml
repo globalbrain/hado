@@ -31,14 +31,11 @@ jobs:
       name: jsr
       url: https://jsr.io/@globalbrain/hado@${{ needs.release.outputs.version }}
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
-      - uses: lewagon/wait-on-check-action@v1.9.1
-        with:
-          ref: ${{ github.sha }}
-          check-regexp: 'test / .*'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: $/.github/actions/wait
       - uses: actions/checkout@v7
       - uses: denoland/setup-deno@v2
       - run: deno publish

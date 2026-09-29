@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -15,5 +18,3 @@ jobs:
     uses: brc-dd/cross-bdd/.github/workflows/test.reusable.yaml@main
     with:
       deno_versions: latest
-    permissions:
-      contents: read
