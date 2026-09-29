@@ -560,26 +560,24 @@ async function createRelease(
 }
 
 /**
- * Create the pull request on GitHub, or update the open one for the same branch.
+ * Find the open pull request of a branch.
+ */
+async function findPullRequest(head: string): Promise<{ number: number; html_url: string } | undefined> {
+  if (!githubToken) return undefined
+
+  const params = new URLSearchParams({ head: `${repoOwner}:${head}`, state: 'open' })
+  const { data } = await github<{ number: number; html_url: string }[]>('GET', `/repos/${repoSlug}/pulls?${params}`)
+
+  return data[0]
+}
+
+/**
+ * Create the pull request on GitHub.
  */
 async function createPullRequest(
   options: { base: string; head: string; title: string; body: string },
 ): Promise<{ url: string; created: boolean }> {
   if (!githubToken) return { url: newGithubPullRequestUrl({ repoUrl, ...options }), created: false }
-
-  const params = new URLSearchParams({ head: `${repoOwner}:${options.head}`, state: 'open' })
-  const { data: pulls } = await github<{ number: number; html_url: string }[]>(
-    'GET',
-    `/repos/${repoSlug}/pulls?${params}`,
-  )
-
-  const existing = pulls[0]
-  if (existing) {
-    await github('PATCH', `/repos/${repoSlug}/pulls/${existing.number}`, {
-      body: { title: options.title, body: options.body, base: options.base },
-    })
-    return { url: existing.html_url, created: true }
-  }
 
   const { data } = await github<{ html_url: string }>('POST', `/repos/${repoSlug}/pulls`, { body: options })
   return { url: data.html_url, created: true }
@@ -627,15 +625,24 @@ async function prepare(input?: string): Promise<void> {
     await commit()
   })
 
+  const pullRequest = { base: baseBranch, head: branch, title: `release: v${newVersion}`, body: notes }
+  const existing = await findPullRequest(branch)
+
+  if (existing) {
+    await step('Updating the pull request', async () => {
+      const { head: _, ...changes } = pullRequest
+      await github('PATCH', `/repos/${repoSlug}/pulls/${existing.number}`, { body: changes })
+    })
+  }
+
   await step('Pushing to GitHub', async () => {
     await $`git push --force origin ${branch}`
     await $`git checkout -q ${$.escapeArg(baseBranch)}`
   })
 
-  const pull = await step(
-    'Creating a pull request',
-    () => createPullRequest({ base: baseBranch, head: branch, title: `release: v${newVersion}`, body: notes }),
-  )
+  const pull = existing
+    ? { url: existing.html_url, created: true }
+    : await step('Creating a pull request', () => createPullRequest(pullRequest))
 
   await report('Pull request', pull)
 }
