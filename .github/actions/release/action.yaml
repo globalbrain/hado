@@ -18,7 +18,18 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: denoland/setup-deno@v2
+    - id: pnpm
+      run: |
+        if [[ -f package.json ]] && jq -e '.devEngines.packageManager // .packageManager' package.json > /dev/null; then
+          echo 'version=' >> "$GITHUB_OUTPUT"
+        else
+          echo 'version=latest' >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
+    - uses: pnpm/setup@v3
+      with:
+        version: ${{ steps.pnpm.outputs.version }}
+        runtime: deno
     - if: inputs.setup != ''
       run: ${{ inputs.setup }}
       shell: bash

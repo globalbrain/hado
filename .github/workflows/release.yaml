@@ -19,6 +19,7 @@ jobs:
     uses: $/.github/workflows/release.reusable.yaml
     with:
       version: ${{ inputs.version }}
+      publish: deno publish
       environment: jsr
       environment_url: https://jsr.io/@globalbrain/hado@{0}
     permissions:

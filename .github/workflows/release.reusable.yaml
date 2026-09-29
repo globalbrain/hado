@@ -9,11 +9,9 @@ on:
       setup:
         description: Commands to run before preparing the release, like installing the dependencies or building
         type: string
-        default: deno install
       publish:
         description: Commands to run after the release is created, like publishing the package
         type: string
-        default: deno publish
       environment:
         description: Environment of the job that creates the release and publishes
         type: string
