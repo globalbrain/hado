@@ -12,7 +12,7 @@ runs:
     - run: |
         found=false
         for workflow in $WORKFLOWS; do
-          gh api "repos/$GH_REPO/actions/workflows/$workflow" --silent 2> /dev/null || continue
+          gh api "repos/$GH_REPO/contents/.github/workflows/$workflow?ref=$GITHUB_SHA" --silent 2> /dev/null || continue
           found=true
           for _ in {1..12}; do
             runs=$(gh run list --workflow "$workflow" --commit "$GITHUB_SHA" --json databaseId --jq '.[].databaseId')
